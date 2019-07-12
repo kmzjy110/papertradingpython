@@ -31,7 +31,7 @@ def get_portfolio_weights(symbol_pairs, lookback = consts.lookback):
             x_target_shares=0
             y_target_shares=0
             logging.log(0,"Exiting positions of "+ x + " and "+ y)
-            consts.ols_pairs_in_long[symbol_pairs[0]]=False
+            consts.ols_pairs_in_long[symbol_pairs[0]]=False #TODO:FIX THIS SYMBOL PAIR INDEXING BS
             consts.ols_pairs_in_short[symbol_pairs[0]] = False
 
         if not consts.ols_pairs_in_long.get(symbol_pairs[0]) and zscore < -1:
