@@ -45,11 +45,11 @@ def get_prices_with_start_end(symbols, end_dt,start_dt):
     while i <= len(symbols) - 1:
         if barset is None:
             barset = get_barset(symbols[i:i + 200])
-            df = barset.df
         else:
             barset.update(get_barset(symbols[i:i + 200]))
         i += 200
-    return barset.df.dropna()
+
+    return barset.df
 
 
 def get_prices_with_lookback(symbols, end_dt, lookback=consts.lookback):

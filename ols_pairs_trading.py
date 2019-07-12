@@ -13,7 +13,7 @@ def get_portfolio_weights(symbol_pairs, lookback = consts.lookback):
         current_prices = helper.current_prices((x,y))
         x_current = current_prices.loc[:, x].loc[:, 'close']
         y_current = current_prices.loc[:, y].loc[:, 'close']
-        prices_up_to_yday = helper.prices_up_to_yesterday((x,y),lookback=200)
+        prices_up_to_yday = helper.prices_up_to_yesterday((x,y),lookback=consts.lookback)
         x_up_to_yday = prices_up_to_yday.loc[:,x].loc[:,'close']
         y_up_to_yday = prices_up_to_yday.loc[:,y].loc[:,'close']
         try:
@@ -22,10 +22,11 @@ def get_portfolio_weights(symbol_pairs, lookback = consts.lookback):
             logging.error(e)
             return
         target_weights = helper.get_current_portfolio_weights()
-        spreads = get_spreads((x,y), hedge, lookback=200)
+        spreads = get_spreads((x,y), hedge, lookback=consts.lookback)
         tests.check_for_stationarity(spreads)
 
-        zscore = (spreads[-1] - spreads.mean()) / spreads.std()
+        diff = y_current[-1] - hedge * x_current[-1]
+        zscore = ( diff - spreads.mean()) / spreads.std()
 
         if (consts.ols_pairs_in_short.get(symbol_pairs[0]) and zscore < 0.0)or (consts.ols_pairs_in_long.get(symbol_pairs[0]) and zscore > 0.0):
             target_weights.loc[x]=0
@@ -50,7 +51,7 @@ def get_portfolio_weights(symbol_pairs, lookback = consts.lookback):
         return target_weights
     pass
 
-def get_spreads(symbol_pair, hedge, lookback = consts.lookback):
+def get_spreads(symbol_pair, hedge, lookback = consts.lookback, prices=None):
     if symbol_pair in consts.spreads.keys():
         old_spreads = consts.spreads[symbol_pair]
         latest_price = helper.current_prices(symbol_pair)
@@ -60,19 +61,21 @@ def get_spreads(symbol_pair, hedge, lookback = consts.lookback):
         new_spreads = old_spreads[1:].append(new_spread)
         return new_spreads
     else:
-        now = pd.Timestamp.now(tz=consts.NY)
         spreads = []
-        prices = helper.prices_up_to_yesterday(symbol_pair,lookback=lookback)
+        if prices is None:
+            prices = helper.prices_up_to_yesterday(symbol_pair,lookback=lookback)
         x_price = prices.loc[:, symbol_pair[0]].loc[:, 'close']
         y_price = prices.loc[:, symbol_pair[1]].loc[:, 'close']
-        for i in range(len(prices)):
+        spreads = y_price - hedge * x_price;
+        """
+                for i in range(len(prices)):
             index=-len(prices)+i
-            y_cur = y_price[index]
-            x_cur=x_price[index]
             spread = y_price[index] - hedge * x_price[index]
             spreads.append(spread)
-        consts.spreads[symbol_pair] = np.array(spreads)
-        return np.array(spreads)
+        """
+
+        consts.spreads[symbol_pair[0]] = np.array(spreads)
+        return spreads
 #OLS:Y=A+BX
 
 def get_hedge_ratio(Y,X,add_const=True):
