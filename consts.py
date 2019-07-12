@@ -9,7 +9,8 @@ api = tradeapi.REST(
     secret_key='vofINwfP0XtMFRNcSzHs4qGBSkmMYqtOoKBPYMsZ',
     base_url='https://paper-api.alpaca.markets'
 )
-lookback=20
-inLong={}
-inShort={}
+want_lookback=20
+lookback=(want_lookback//5)*7
+ols_pairs_in_long={}
+ols_pairs_in_short={}
 spreads={}

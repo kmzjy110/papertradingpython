@@ -2,12 +2,18 @@ import test
 import helper
 import consts
 import pandas as pd
+import ols_pairs_trading
+import tests
 lookback=20
 NY='America/New_York'
-symbol_pair = 'AAPL'
-now = consts.api.get_clock().timestamp
-print(now)
-end_dt = now - pd.Timedelta(str(lookback) + ' days') + pd.Timedelta(str(20) + ' days')
-prices = helper.get_prices(symbol_pair, end_dt, lookback=lookback).loc[:,'AAPL']
-print(prices)
-print(helper.current_prices('AAPL'))
+
+symbols = ('FCAU','HMC')
+start_day='2019-05-17T11:02:35.532756347-04:00Z'
+end_day='2019-06-14T11:02:35.532756347-04:00Z'
+start_day=pd.Timestamp(2019,5,17)
+end_day = pd.Timestamp(2019,6,14)
+#prices = helper.get_prices_with_start_end(symbols, end_dt=end_day, start_dt=start_day)
+#another = helper.get_prices_with_start_end(symbols, start_day, end_day)
+#tests.test_coint(('FCAU','HMC'))
+
+ols_pairs_trading.get_portfolio_weights([('FCAU','HMC')])

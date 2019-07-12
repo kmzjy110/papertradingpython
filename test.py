@@ -3,6 +3,7 @@ import pandas as pd
 import time
 import logging
 #import statsmodels.api as sm
+import ols_pairs_trading
 
 NY='America/New_York'
 api = tradeapi.REST(
@@ -25,6 +26,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 
