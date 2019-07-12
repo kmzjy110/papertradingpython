@@ -6,7 +6,7 @@ import logging
 def get_current_portfolio_weights():
     positions = consts.api.list_positions()
     if not positions:
-        return None
+        return pd.DataFrame()
     symbols = pd.Index([p.symbol for p in positions])
     quantities = [p.qty for p in positions]
     share_counts = pd.Series(
@@ -18,9 +18,13 @@ def get_current_portfolio_weights():
     return current_weights
 
 def current_prices(symbols):
-    now = pd.Timestamp.now(consts.NY);
+    now = pd.Timestamp.now(consts.NY)
     if not consts.api.get_clock().is_open:
-        return prices_up_to_yesterday(symbols, lookback=1)
+        market_close = now.replace(hour=15, minute=58,second=0,microsecond=0)
+        if now >= market_close:
+            return consts.api.get_barset(symbols,'minute',limit=5,start=market_close,end=market_close).df.dropna().head(1)
+        else:
+            return prices_up_to_yesterday(symbols, lookback=1).dropna().head(1)
     else:
         return consts.api.get_barset(symbols,'minute',limit=5,start=now,end=now).df.dropna().head(1)
 
