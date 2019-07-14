@@ -15,6 +15,9 @@ ols_pairs_in_long={}
 ols_pairs_in_short={}
 spreads={}
 
-pairs = [('ALL','WLTW'), ('AAPL','TXN'), ('DG','WMT'),('NFLX','DISCK'), ('CRM','IBM'), ('WRK','PEP'),('MET','ABBV')]
+pairs = [('AAPL','TXN'), ('DG','WMT'),('NFLX','DISCK'), ('CRM','IBM')]
+columns = [ 'AAPL','TXN','WMT','DG','NFLX','DISCK','CRM','IBM']
 
 #MET,ABBV and MET,LLY
+#('ALL','WLTW')
+#'ALL','WLTW',

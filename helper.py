@@ -13,20 +13,28 @@ def get_current_portfolio_weights():
         index= symbols,
         data = quantities
     )
-    current_prices = pd.Series(index = symbols, data=[prices_up_to_yesterday(p.symbol, lookback=1).loc[:, p.symbol].loc[:, 'close'] for p in positions])
-    current_weights = share_counts *current_prices / consts.api.get_account().equity
+    cum_prices = current_prices([p.symbol for p in positions])
+
+    prices = pd.DataFrame()
+    for column in cum_prices.columns:
+        prices.loc[:, column[0]] = [cum_prices.loc[:, column[0]].loc[:, 'close'][0]]
+    current_weights = share_counts *prices / consts.api.get_account().equity
     return current_weights
 
 def current_prices(symbols):
     now = pd.Timestamp.now(consts.NY)
     if not consts.api.get_clock().is_open:
-        market_close = now.replace(hour=15, minute=58,second=0,microsecond=0)
+        market_close = now.replace(hour=15, minute=59,second=0,microsecond=0)
         if now >= market_close:
-            return consts.api.get_barset(symbols,'minute',limit=5,start=market_close,end=market_close).df.dropna().head(1)
+            start = now.replace(hour=15, minute=00,second=0,microsecond=0).isoformat()[:19]+'Z'
+            end = market_close.isoformat()[:19]+'Z'
+            df = consts.api.get_barset(symbols,'minute',limit=60,start=start,end=end).df
+            df_dropped = df.dropna()
+            return df_dropped.tail(1)
         else:
-            return prices_up_to_yesterday(symbols, lookback=1).dropna().head(1)
+            return prices_up_to_yesterday(symbols, lookback=1).dropna().tail(1)
     else:
-        return consts.api.get_barset(symbols,'minute',limit=5,start=now,end=now).df.dropna().head(1)
+        return consts.api.get_barset(symbols,'minute',limit=20,start=now-pd.Timedelta('5 minutes'),end=now).df.dropna().tail(1)
 
 def prices_up_to_yesterday(symbols, lookback=consts.lookback):
     now = pd.Timestamp.now(consts.NY)
@@ -59,3 +67,15 @@ def get_prices_with_start_end(symbols, end_dt,start_dt):
 def get_prices_with_lookback(symbols, end_dt, lookback=consts.lookback):
     start_dt = end_dt - pd.Timedelta(str(lookback)+' days')
     return get_prices_with_start_end(symbols, end_dt=end_dt, start_dt=start_dt)
+
+
+def get_share_numbers(total_dollar, weights):
+    #df = pd.DataFrame(columns=consts.columns)
+    #df.loc[0] = weights
+    dollar_values = weights*total_dollar
+    prices = current_prices(consts.columns)
+    numshares = pd.DataFrame()
+    for column in prices.columns:
+        numshares.loc[:,column[0]] = [prices.loc[:,column[0]].loc[:,'close'][0]]
+    numshares= dollar_values/numshares
+    return numshares

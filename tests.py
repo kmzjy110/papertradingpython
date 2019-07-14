@@ -116,5 +116,5 @@ def do_coint(symbol_pair, start_day, end_day):
 
 def test_pairs():
     for pair in consts.pairs:
-        test_coint(pair)
+        test_coint(pair) #TODO:out of sample tests
 

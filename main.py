@@ -4,25 +4,22 @@ import time
 import logging
 #import statsmodels.api as sm
 import ols_pairs_trading
-
-NY='America/New_York'
-api = tradeapi.REST(
-    key_id='PKBJHXRAN650UDI78H7B',
-    secret_key='vofINwfP0XtMFRNcSzHs4qGBSkmMYqtOoKBPYMsZ',
-    base_url='https://paper-api.alpaca.markets'
-)
+import consts
+import experiments
 
 def main():
     done = None
     logging.info('started')
     while True:
-        clock = api.get_clock()
+        clock = consts.api.get_clock()
         now = clock.timestamp
         if clock.is_open and done!= now.strftime('%Y-%m-%d'):
 
             done = now.strftime('%Y-%m-%d')
             logging.info(f'Done for {done}')
-    pass
+
+
+
 
 if __name__ == '__main__':
     main()
