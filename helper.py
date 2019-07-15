@@ -4,22 +4,28 @@ import time
 import logging
 
 def get_current_portfolio_weights():
-    positions = consts.api.list_positions()
-    if not positions:
+    share_counts = get_current_portfolio_positions()
+    if share_counts is None:
         return pd.DataFrame()
-    symbols = pd.Index([p.symbol for p in positions])
-    quantities = [p.qty for p in positions]
-    share_counts = pd.Series(
-        index= symbols,
-        data = quantities
-    )
-    cum_prices = current_prices([p.symbol for p in positions])
+    cum_prices = current_prices([c[0] for c in share_counts.columns])
 
     prices = pd.DataFrame()
     for column in cum_prices.columns:
         prices.loc[:, column[0]] = [cum_prices.loc[:, column[0]].loc[:, 'close'][0]]
     current_weights = share_counts *prices / consts.api.get_account().equity
     return current_weights
+
+def get_current_portfolio_positions():
+    positions = consts.api.list_positions()
+    if not positions:
+        return None
+    symbols = pd.Index([p.symbol for p in positions])
+    quantities = [p.qty for p in positions]
+    share_counts = pd.Series(
+        index=symbols,
+        data=quantities
+    )
+    return share_counts
 
 def current_prices(symbols):
     now = pd.Timestamp.now(consts.NY)
