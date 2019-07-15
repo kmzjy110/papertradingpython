@@ -2,8 +2,10 @@ import consts
 import pandas as pd
 import time
 import logging
+import ols_pairs_trading
 
 def get_current_portfolio_weights():
+    strategy_status = ols_pairs_trading.get_current_strategy_status() #TODO:CHANGE THIS HARD CODING
     share_counts = get_current_portfolio_positions()
     if share_counts.empty:
         return pd.DataFrame()
@@ -12,7 +14,7 @@ def get_current_portfolio_weights():
     prices = pd.DataFrame()
     for column in cum_prices.columns:
         prices.loc[:, column[0]] = [cum_prices.loc[:, column[0]].loc[:, 'close'][0]]
-    current_weights = share_counts*prices/float(consts.api.get_account().equity)
+    current_weights = share_counts*prices/(float(consts.api.get_account().equity)-float(strategy_status["REMAINING_CASH"]))
     return current_weights
 
 def get_current_portfolio_positions():

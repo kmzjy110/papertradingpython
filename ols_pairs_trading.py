@@ -9,8 +9,9 @@ import json
 def get_portfolio_weights(symbol_pairs, lookback = consts.lookback, set_status=True):
     target_weights = helper.get_current_portfolio_weights()
     delta=False
+    strategy_status = get_current_strategy_status()
     for (x,y) in symbol_pairs:
-        strategy_status = get_current_strategy_status()
+
         query_string = x+' '+y
         current_prices = helper.current_prices((x,y))
         x_current = current_prices.loc[:, x].loc[:, 'close']
@@ -78,7 +79,7 @@ def get_portfolio_weights(symbol_pairs, lookback = consts.lookback, set_status=T
             delta = True
 
 
-    if set_status:
+    if set_status and delta:
         set_current_strategy_status(strategy_status)
     return target_weights, delta
 
@@ -102,17 +103,10 @@ def get_spreads(symbol_pair, hedge, lookback = consts.lookback, prices=None):
         x_price = prices.loc[:, symbol_pair[0]].loc[:, 'close']
         y_price = prices.loc[:, symbol_pair[1]].loc[:, 'close']
         spreads = y_price - hedge * x_price
-        """
-                for i in range(len(prices)):
-            index=-len(prices)+i
-            spread = y_price[index] - hedge * x_price[index]
-            spreads.append(spread)
-        """
-
         consts.spreads[symbol_pair] = spreads
         return spreads
-#OLS:Y=A+BX
 
+#OLS:Y=A+BX
 def get_hedge_ratio(Y,X,add_const=True):
     if add_const:
         new_X=sm.add_constant(X)
@@ -133,15 +127,15 @@ def build_orders(cash=5000):
     weights, delta = get_portfolio_weights(consts.pairs)
     if not delta:
         return []
-    num_shares = helper.get_share_numbers(cash,weights)
+    target_num_shares = helper.get_share_numbers(cash,weights) #BECAUSE ONLY PASSING IN 5000, TARGET NUMBER OF SHARES MUST BE PROPORTIONAL
     cur_positions = helper.get_current_portfolio_positions()
     order_df = pd.DataFrame()
     orders = []
-    for column in num_shares.columns:
+    for column in target_num_shares.columns:
         if column not in cur_positions.columns:
-            order_df.loc[:,column] = [num_shares.loc[:,column][0]]
+            order_df.loc[:,column] = [target_num_shares.loc[:,column][0]]
         else:
-            order_df.loc[:,column] = [num_shares.loc[:,column]-cur_positions.loc[:,column]]
+            order_df.loc[:,column] = [target_num_shares.loc[:,column][0]-cur_positions.loc[:,column][0]]
 
     for column in order_df.columns:
         rounded = round(order_df.loc[:,column].loc[0])
