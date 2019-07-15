@@ -2,16 +2,16 @@ import helper
 import logging
 import consts
 import pandas as pd
-import numpy as np
 import statsmodels.api as sm
-import matplotlib.pyplot as plt
-import tests
 import json
 #return stock-weight pairs that sum to one
 
-def get_portfolio_weights(symbol_pairs, lookback = consts.lookback):
+def get_portfolio_weights(symbol_pairs, lookback = consts.lookback, set_status=True):
     target_weights = helper.get_current_portfolio_weights()
+    delta=False
     for (x,y) in symbol_pairs:
+        strategy_status = get_current_strategy_status()
+        query_string = x+' '+y
         current_prices = helper.current_prices((x,y))
         x_current = current_prices.loc[:, x].loc[:, 'close']
         y_current = current_prices.loc[:, y].loc[:, 'close']
@@ -35,22 +35,24 @@ def get_portfolio_weights(symbol_pairs, lookback = consts.lookback):
         if(not x in target_weights) or (not y in target_weights):
             target_weights.loc[:,x] = [0]
             target_weights.loc[:,y] = [0]
+            delta=True
 
-        if (consts.ols_pairs_in_short.get((x,y)) and zscore < 0.0)or (consts.ols_pairs_in_long.get((x,y)) and zscore > 0.0):
+        if ((strategy_status[query_string]['inShort']=='True') and zscore < 0.0)or ((strategy_status[query_string]['inLong']=='True') and zscore > 0.0):
 
             logging.log(0,"Exiting positions of "+ x + " and "+ y)
-            consts.ols_pairs_in_long[(x,y)]=False
-            consts.ols_pairs_in_short[(x,y)] = False
+            strategy_status[query_string]['inShort'] = 'False'
+            strategy_status[query_string]['inLong'] = 'False'
             x_target_weight=0
             y_target_weight=0
             target_weights[x] = x_target_weight.values
             target_weights[y] = y_target_weight.values
-
-        if not consts.ols_pairs_in_long.get((x,y)) and zscore < -1:
+            delta = True
+        if not strategy_status[query_string]['inLong'] == 'True' and zscore < -1:
             y_target_shares = 1
             x_target_shares = -hedge
-            consts.ols_pairs_in_long[(x,y)] = True
-            consts.ols_pairs_in_short[(x,y)] = False
+            strategy_status[query_string]['inShort'] = 'False'
+            strategy_status[query_string]['inLong'] = 'True'
+
 
             x_target_pct, y_target_pct = get_holding_percentage(x_target_shares, y_target_shares, x_current, y_current)
             x_target_weight = x_target_pct * (1.0 / len(symbol_pairs))
@@ -58,12 +60,12 @@ def get_portfolio_weights(symbol_pairs, lookback = consts.lookback):
 
             target_weights[x] = x_target_weight.values
             target_weights[y] = y_target_weight.values
-
-        if not consts.ols_pairs_in_short.get((x,y)) and zscore >1:
+            delta = True
+        if not strategy_status[query_string]['inShort'] == 'True' and zscore >1:
             y_target_shares = -1
             x_target_shares = hedge
-            consts.ols_pairs_in_long[(x,y)] = False
-            consts.ols_pairs_in_short[(x,y)] = True
+            strategy_status[query_string]['inShort'] = 'True'
+            strategy_status[query_string]['inLong'] = 'False'
             logging.log(0, "" + x + " target shares:" + str(x_target_shares) + "; " + y + " target shares:" + str(
                 y_target_shares))
 
@@ -73,12 +75,12 @@ def get_portfolio_weights(symbol_pairs, lookback = consts.lookback):
 
             target_weights[x] = x_target_weight.values
             target_weights[y] = y_target_weight.values
+            delta = True
 
 
-
-
-    return target_weights
-    pass
+    if set_status:
+        set_current_strategy_status(strategy_status)
+    return target_weights, delta
 
 
 def get_spreads(symbol_pair, hedge, lookback = consts.lookback, prices=None):
@@ -128,7 +130,9 @@ def get_holding_percentage(xShares, yShares, xPrice, yPrice):
     return (xdol/total), (ydol/total)
 
 def build_orders(cash=5000):
-    weights = get_portfolio_weights(consts.pairs)
+    weights, delta = get_portfolio_weights(consts.pairs)
+    if not delta:
+        return None
     num_shares = helper.get_share_numbers(cash,weights)
     cur_positions = helper.get_current_portfolio_positions()
     order_df = pd.DataFrame()
@@ -164,12 +168,7 @@ def build_orders(cash=5000):
     return orders
 
 
-def set_current_strategy_status():
-    data={}
-    data["AAPL TXN"]={'inShort':'True','inLong':'False'}
-    data["DG WMT"] = {'inShort':'True','inLong':'False'}
-    data["NFLX DISCK"] = {'inShort':'True','inLong':'False'}
-    data["CRM IBM"]={'inShort':'True','inLong':'False'}
+def set_current_strategy_status(data):
     with open('ols_pairs_trading','w+') as outfile:
         json.dump(data,outfile)
 

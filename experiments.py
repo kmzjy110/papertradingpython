@@ -20,5 +20,7 @@ end_day = pd.Timestamp(2019,6,14)
 #tests.test_coint(('FCAU','HMC'))
 
 #tests.test_pairs()
+#prices = helper.prices_up_to_yesterday('AAPL')
 
-ols_pairs_trading.get_current_strategy_status()
+ols_pairs_trading.set_current_strategy_status(None)
+#ols_pairs_trading.get_portfolio_weights(consts.pairs)
