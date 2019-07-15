@@ -23,4 +23,4 @@ end_day = pd.Timestamp(2019,6,14)
 #prices = helper.prices_up_to_yesterday('AAPL')
 
 ols_pairs_trading.set_current_strategy_status(None)
-#ols_pairs_trading.get_portfolio_weights(consts.pairs)
+#ols_pairs_trading.json.get_portfolio_weights(consts.pairs)

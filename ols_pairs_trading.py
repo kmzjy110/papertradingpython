@@ -169,13 +169,13 @@ def build_orders(cash=5000):
 
 
 def set_current_strategy_status(data):
-    with open('ols_pairs_trading','w+') as outfile:
+    with open('ols_pairs_trading.json','w+') as outfile:
         json.dump(data,outfile)
 
 
 
 def get_current_strategy_status():
-    with open('ols_pairs_trading') as file:
+    with open('ols_pairs_trading.json') as file:
         data = json.load(file)
         return data
 
