@@ -132,7 +132,7 @@ def get_holding_percentage(xShares, yShares, xPrice, yPrice):
 def build_orders(cash=5000):
     weights, delta = get_portfolio_weights(consts.pairs)
     if not delta:
-        return None
+        return []
     num_shares = helper.get_share_numbers(cash,weights)
     cur_positions = helper.get_current_portfolio_positions()
     order_df = pd.DataFrame()
