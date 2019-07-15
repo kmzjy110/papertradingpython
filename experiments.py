@@ -21,6 +21,6 @@ end_day = pd.Timestamp(2019,6,14)
 
 #tests.test_pairs()
 #prices = helper.prices_up_to_yesterday('AAPL')
+logging.basicConfig(filename='app.log', level=logging.INFO)
 
-
-ols_pairs_trading.build_orders(5000)
+ols_pairs_trading.get_portfolio_weights(consts.pairs,set_status=False)

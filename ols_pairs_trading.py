@@ -40,7 +40,7 @@ def get_portfolio_weights(symbol_pairs, lookback = consts.lookback, set_status=T
 
         if ((strategy_status[query_string]['inShort']=='True') and zscore < 0.0)or ((strategy_status[query_string]['inLong']=='True') and zscore > 0.0):
 
-            logging.log(0,"Exiting positions of "+ x + " and "+ y)
+
             strategy_status[query_string]['inShort'] = 'False'
             strategy_status[query_string]['inLong'] = 'False'
             x_target_weight=0
@@ -67,8 +67,7 @@ def get_portfolio_weights(symbol_pairs, lookback = consts.lookback, set_status=T
             x_target_shares = hedge
             strategy_status[query_string]['inShort'] = 'True'
             strategy_status[query_string]['inLong'] = 'False'
-            logging.log(0, "" + x + " target shares:" + str(x_target_shares) + "; " + y + " target shares:" + str(
-                y_target_shares))
+
 
             x_target_pct, y_target_pct = get_holding_percentage(x_target_shares, y_target_shares, x_current, y_current)
             x_target_weight = x_target_pct * (1.0 / len(symbol_pairs))

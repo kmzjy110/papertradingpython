@@ -43,7 +43,7 @@ def current_prices(symbols):
     else:
         end = now.isoformat()+'Z'
         start = (now-pd.Timedelta('20 minutes')).isoformat()+'Z'
-        df = consts.api.get_barset(symbols,'1Min',limit=1,start=start,end=end)
+        df = consts.api.get_barset(symbols,'1Min',limit=1,start=start,end=end) #how get barset works: at least [limit] entries for each of the symbols
         df = df.df
         return df.ffill().tail(1)
 
@@ -95,7 +95,7 @@ def trade(orders, wait = 100):
     sells = [o for o in orders if o['side'] == 'sell']
     for order in sells:
         try:
-            logging.info(f'submit (sell):{order}')
+            logging.info(f'submit (sell):{order} for {order["qty"]} shares')
             consts.api.submit_order(
                 symbol=order['symbol'],
                 qty=order['qty'],
@@ -110,7 +110,7 @@ def trade(orders, wait = 100):
     while len(pending)>0:
         pending = consts.api.list_orders()
         if len(pending)==0:
-            logging.info('all sell orders done')
+            logging.info('---------all sell orders done---------')
             break
         logging.info(f'{len(pending)} sell orders pending...')
         time.sleep(1)
@@ -119,7 +119,7 @@ def trade(orders, wait = 100):
     buys = [o for o in orders if o['side']=='buy']
     for order in buys:
         try:
-            logging.info(f'submit (buy):{order}')
+            logging.info(f'submit (buy):{order} for {order["qty"]} shares')
             consts.api.submit_order(
                 symbol=order['symbol'],
                 qty=order['qty'],
@@ -134,7 +134,7 @@ def trade(orders, wait = 100):
     while len(pending) > 0:
         pending = consts.api.list_orders()
         if len(pending) == 0:
-            logging.info('all buy orders done')
+            logging.info('---------all buy orders done---------')
             break
         logging.info(f'{len(pending)} buy orders pending...')
         time.sleep(1)
