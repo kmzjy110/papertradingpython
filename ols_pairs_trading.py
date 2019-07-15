@@ -6,6 +6,7 @@ import numpy as np
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import tests
+import json
 #return stock-weight pairs that sum to one
 
 def get_portfolio_weights(symbol_pairs, lookback = consts.lookback):
@@ -28,8 +29,6 @@ def get_portfolio_weights(symbol_pairs, lookback = consts.lookback):
         spreads = get_spreads((x,y), hedge, lookback=lookback)
 
         diff = y_current[-1] - hedge * x_current[-1]
-        spread_mean = spreads.mean()
-        spread_std = spreads.std()
         zscore = ( diff - spreads.mean()) / spreads.std()
 
 
@@ -127,3 +126,59 @@ def get_holding_percentage(xShares, yShares, xPrice, yPrice):
     ydol = yShares * yPrice;
     total = abs(xdol) + abs(ydol)
     return (xdol/total), (ydol/total)
+
+def build_orders(cash=5000):
+    weights = get_portfolio_weights(consts.pairs)
+    num_shares = helper.get_share_numbers(cash,weights)
+    cur_positions = helper.get_current_portfolio_positions()
+    order_df = pd.DataFrame()
+    orders = []
+    for column in num_shares.columns:
+        if column not in cur_positions.columns:
+            order_df.loc[:,column] = [num_shares.loc[:,column][0]]
+        else:
+            order_df.loc[:,column] = [num_shares.loc[:,column]-cur_positions.loc[:,column]]
+
+    for column in order_df.columns:
+        rounded = round(order_df.loc[:,column].loc[0])
+        if (rounded ==0) and (not order_df.loc[:,column].loc[0]==0):
+            logging.error("rounded to 0!")
+            raise Exception ('rounded to 0!')
+        order_df.loc[:,column].loc[0]=rounded
+
+    for column in order_df.columns:
+        num = order_df.loc[:,column][0]
+        if num<0:
+            orders.append({
+                'symbol':column,
+                'qty' : -num,
+                'side': 'sell'
+            })
+        else:
+            orders.append({
+                'symbol':column,
+                'qty': num,
+                'side':'buy'
+            })
+
+    return orders
+
+
+def set_current_strategy_status():
+    data={}
+    data["AAPL TXN"]={'inShort':'True','inLong':'False'}
+    data["DG WMT"] = {'inShort':'True','inLong':'False'}
+    data["NFLX DISCK"] = {'inShort':'True','inLong':'False'}
+    data["CRM IBM"]={'inShort':'True','inLong':'False'}
+    with open('ols_pairs_trading','w+') as outfile:
+        json.dump(data,outfile)
+
+
+
+def get_current_strategy_status():
+    with open('ols_pairs_trading') as file:
+        data = json.load(file)
+        return data
+
+
+

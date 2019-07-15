@@ -3,6 +3,7 @@ import helper
 import consts
 import pandas as pd
 import ols_pairs_trading
+import logging
 import tests
 import universe
 import alpaca_trade_api
@@ -20,10 +21,4 @@ end_day = pd.Timestamp(2019,6,14)
 
 #tests.test_pairs()
 
-weights = ols_pairs_trading.get_portfolio_weights(consts.pairs)
-#weights = [ 0.09676241, -0.15323759,  0.10637252, -0.14362748 , 0.08412611, -0.16587389,
-#   0.,          0.        ]
-#weights=[ 0.06450827, -0.1021584 ,  0.07098589, -0.09568077 , 0.05608408, -0.11058259,
-#   0.    ,      0.  ,       -0.076328  , -0.09033867  ,0.08144351,  0.08522315]
-num_shares = helper.get_share_numbers(5000, weights)
-print(num_shares)
+ols_pairs_trading.get_current_strategy_status()

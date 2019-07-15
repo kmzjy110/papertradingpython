@@ -21,3 +21,4 @@ columns = [ 'AAPL','TXN','WMT','DG','NFLX','DISCK','CRM','IBM']
 #MET,ABBV and MET,LLY
 #('ALL','WLTW')
 #'ALL','WLTW',
+#buy x sell y in short

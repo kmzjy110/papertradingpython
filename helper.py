@@ -5,27 +5,26 @@ import logging
 
 def get_current_portfolio_weights():
     share_counts = get_current_portfolio_positions()
-    if share_counts is None:
+    if share_counts.empty:
         return pd.DataFrame()
-    cum_prices = current_prices([c[0] for c in share_counts.columns])
+    cum_prices = current_prices([c for c in share_counts.columns])
 
     prices = pd.DataFrame()
     for column in cum_prices.columns:
         prices.loc[:, column[0]] = [cum_prices.loc[:, column[0]].loc[:, 'close'][0]]
-    current_weights = share_counts *prices / consts.api.get_account().equity
+    current_weights = share_counts*prices/float(consts.api.get_account().equity)
     return current_weights
 
 def get_current_portfolio_positions():
     positions = consts.api.list_positions()
+    positions_df = pd.DataFrame()
     if not positions:
-        return None
-    symbols = pd.Index([p.symbol for p in positions])
-    quantities = [p.qty for p in positions]
-    share_counts = pd.Series(
-        index=symbols,
-        data=quantities
-    )
-    return share_counts
+        return positions_df
+
+    for position in positions:
+        positions_df.loc[:,position.symbol] = [float(position.qty)]
+    return positions_df
+
 
 def current_prices(symbols):
     now = pd.Timestamp.now(consts.NY)
@@ -85,3 +84,52 @@ def get_share_numbers(total_dollar, weights):
         numshares.loc[:,column[0]] = [prices.loc[:,column[0]].loc[:,'close'][0]]
     numshares= dollar_values/numshares
     return numshares
+
+def trade(orders, wait = 100):
+    sells = [o for o in orders if o['side'] == 'sell']
+    for order in sells:
+        try:
+            logging.info(f'submit (sell):{order}')
+            consts.api.submit_order(
+                symbol=order['symbol'],
+                qty=order['qty'],
+                side='sell',
+                type = 'market',
+                time_in_force='day'
+            )
+        except Exception as e:
+            logging.error(e)
+    count = wait
+    pending = consts.api.list_orders()
+    while len(pending)>0:
+        pending = consts.api.list_orders()
+        if len(pending)==0:
+            logging.info('all sell orders done')
+            break
+        logging.info(f'{len(pending)} sell orders pending...')
+        time.sleep(1)
+        count -=1
+
+    buys = [o for o in orders if o['side']=='buy']
+    for order in buys:
+        try:
+            logging.info(f'submit (buy):{order}')
+            consts.api.submit_order(
+                symbol=order['symbol'],
+                qty=order['qty'],
+                side='buy',
+                type = 'market',
+                time_in_force='day'
+            )
+        except Exception as e:
+            logging.error(e)
+    count = wait
+    pending = consts.api.list_orders()
+    while len(pending) > 0:
+        pending = consts.api.list_orders()
+        if len(pending) == 0:
+            logging.info('all buy orders done')
+            break
+        logging.info(f'{len(pending)} buy orders pending...')
+        time.sleep(1)
+        count -= 1
