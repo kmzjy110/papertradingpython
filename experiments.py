@@ -27,9 +27,9 @@ experiment_end_day = pd.Timestamp(year=2019,month=7,day=1,tz=NY)
 
 #tests.test_pairs()
 #prices = helper.prices_up_to_yesterday('AAPL')
-clock = consts.api.get_clock()
+weights, delta = ols_pairs_trading.get_portfolio_weights(consts.pairs)
 
-BacktesterAPI = backtester.BacktesterAPI(current_time = start_day, start_date = start_day, end_date = end_day, symbols_involved = symbols, alpaca_api = consts.api)
+BacktesterAPI = backtester.BacktestEngine(current_time = start_day, start_date = start_day, end_date = end_day, symbols_involved = symbols, alpaca_api = consts.api)
 
 
 barset = BacktesterAPI.get_barset(symbols2,"day",200, experiment_start_day,experiment_end_day)

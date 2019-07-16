@@ -15,7 +15,7 @@ class Backtester:
 
 #functionalities: read-write backtesting results and displaying it
 #class BacktestResultsReader
-class BacktesterAPI:
+class BacktestEngine:
     def __init__(self, current_time, start_date, end_date, symbols_involved, alpaca_api, max_lookback = consts.lookback, timeframe = 'day'):
         self.current_time = current_time
         self.start_date = start_date

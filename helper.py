@@ -29,7 +29,8 @@ def get_current_portfolio_positions():
 
 
 def current_prices(symbols):
-    now = pd.Timestamp.now(consts.NY).replace(second=0,microsecond=0)
+    now = consts.api.get_clock().timestamp.replace(second=0,microsecond=0)
+    #now = pd.Timestamp.now(consts.NY).replace(second=0,microsecond=0)
     if not consts.api.get_clock().is_open:
         market_close = now.replace(hour=15, minute=59,second=0,microsecond=0)
         if now >= market_close:
@@ -48,7 +49,7 @@ def current_prices(symbols):
         return df.ffill().tail(1)
 
 def prices_up_to_yesterday(symbols, lookback=consts.lookback):
-    now = pd.Timestamp.now(consts.NY)
+    now = consts.api.get_clock().timestamp
     end_dt = now
     return get_prices_with_lookback(symbols, end_dt, lookback=lookback)
 

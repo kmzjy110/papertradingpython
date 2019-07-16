@@ -6,7 +6,7 @@ import statsmodels.api as sm
 import json
 #return stock-weight pairs that sum to one
 
-def get_portfolio_weights(symbol_pairs, lookback = consts.lookback, set_status=True):
+def get_portfolio_weights(symbol_pairs, lookback = consts.lookback, set_status=False):
     target_weights = helper.get_current_portfolio_weights()
     delta=False
     strategy_status = get_current_strategy_status()
