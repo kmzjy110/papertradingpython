@@ -33,8 +33,8 @@ def current_prices(symbols):
     if not consts.api.get_clock().is_open:
         market_close = now.replace(hour=15, minute=59,second=0,microsecond=0)
         if now >= market_close:
-            start = now.replace(hour=15, minute=00,second=0,microsecond=0).isoformat()[:19]+'Z'
-            end = market_close.isoformat()[:19]+'Z'
+            start = now.replace(hour=15, minute=00,second=0,microsecond=0).isoformat()[:consts.iso_format_string_adjust]+'Z'
+            end = market_close.isoformat()[:consts.iso_format_string_adjust]+'Z'
             df = consts.api.get_barset(symbols,'minute',limit=60,start=start,end=end).df
             df_dropped = df.dropna()
             return df_dropped.tail(1)

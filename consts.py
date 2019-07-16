@@ -9,6 +9,7 @@ api = tradeapi.REST(
     secret_key='vofINwfP0XtMFRNcSzHs4qGBSkmMYqtOoKBPYMsZ',
     base_url='https://paper-api.alpaca.markets'
 )
+iso_format_string_adjust = 19
 want_lookback=20
 lookback=200
 ols_pairs_in_long={}
