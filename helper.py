@@ -1,11 +1,12 @@
-import consts
-import pandas as pd
-import time
 import logging
+import time
+import pandas as pd
+import consts
 import ols_pairs_trading
 
+
 def get_current_portfolio_weights():
-    strategy_status = ols_pairs_trading.get_current_strategy_status() #TODO:CHANGE THIS HARD CODING
+    strategy_status = ols_pairs_trading.get_current_strategy_status()  # TODO:CHANGE THIS HARD CODING
     share_counts = get_current_portfolio_positions()
     if share_counts.empty:
         return pd.DataFrame()
@@ -14,8 +15,10 @@ def get_current_portfolio_weights():
     prices = pd.DataFrame()
     for column in cum_prices.columns:
         prices.loc[:, column[0]] = [cum_prices.loc[:, column[0]].loc[:, 'close'][0]]
-    current_weights = share_counts*prices/(float(consts.api.get_account().equity)-float(strategy_status["REMAINING_CASH"]))
+    current_weights = share_counts * prices / (
+                float(consts.api.get_account().equity) - float(strategy_status["REMAINING_CASH"]))
     return current_weights
+
 
 def get_current_portfolio_positions():
     positions = consts.api.list_positions()
@@ -24,29 +27,32 @@ def get_current_portfolio_positions():
         return positions_df
 
     for position in positions:
-        positions_df.loc[:,position.symbol] = [float(position.qty)]
+        positions_df.loc[:, position.symbol] = [float(position.qty)]
     return positions_df
 
 
 def current_prices(symbols):
-    now = consts.api.get_clock().timestamp.replace(second=0,microsecond=0)
-    #now = pd.Timestamp.now(consts.NY).replace(second=0,microsecond=0)
+    now = consts.api.get_clock().timestamp.replace(second=0, microsecond=0)
+    # now = pd.Timestamp.now(consts.NY).replace(second=0,microsecond=0)
     if not consts.api.get_clock().is_open:
-        market_close = now.replace(hour=15, minute=59,second=0,microsecond=0)
+        market_close = now.replace(hour=15, minute=59, second=0, microsecond=0)
         if now >= market_close:
-            start = now.replace(hour=15, minute=00,second=0,microsecond=0).isoformat()[:consts.iso_format_string_adjust]+'Z'
-            end = market_close.isoformat()[:consts.iso_format_string_adjust]+'Z'
-            df = consts.api.get_barset(symbols,'minute',limit=60,start=start,end=end).df
+            start = now.replace(hour=15, minute=00, second=0, microsecond=0).isoformat()[
+                    :consts.iso_format_string_adjust] + 'Z'
+            end = market_close.isoformat()[:consts.iso_format_string_adjust] + 'Z'
+            df = consts.api.get_barset(symbols, 'minute', limit=60, start=start, end=end).df
             df_dropped = df.dropna()
             return df_dropped.tail(1)
         else:
             return prices_up_to_yesterday(symbols, lookback=1).dropna().tail(1)
     else:
-        end = now.isoformat()+'Z'
-        start = (now-pd.Timedelta('20 minutes')).isoformat()+'Z'
-        df = consts.api.get_barset(symbols,'1Min',limit=1,start=start,end=end) #how get barset works: at least [limit] entries for each of the symbols
+        end = now.isoformat() + 'Z'
+        start = (now - pd.Timedelta('20 minutes')).isoformat() + 'Z'
+        df = consts.api.get_barset(symbols, '1Min', limit=1, start=start,
+                                   end=end)  # how get barset works: at least [limit] entries for each of the symbols
         df = df.df
         return df.ffill().tail(1)
+
 
 def prices_up_to_yesterday(symbols, lookback=consts.lookback):
     now = consts.api.get_clock().timestamp
@@ -54,11 +60,11 @@ def prices_up_to_yesterday(symbols, lookback=consts.lookback):
     return get_prices_with_lookback(symbols, end_dt, lookback=lookback)
 
 
-def get_prices_with_start_end(symbols, end_dt,start_dt):
-    end_dt=pd.Timestamp(end_dt.year,end_dt.month,end_dt.day)
-    start_dt=pd.Timestamp(start_dt.year,start_dt.month,start_dt.day)
-    end_dt = end_dt.isoformat() +'Z'
-    start_dt = start_dt.isoformat() +'Z'
+def get_prices_with_start_end(symbols, end_dt, start_dt):
+    end_dt = pd.Timestamp(end_dt.year, end_dt.month, end_dt.day)
+    start_dt = pd.Timestamp(start_dt.year, start_dt.month, start_dt.day)
+    end_dt = end_dt.isoformat() + 'Z'
+    start_dt = start_dt.isoformat() + 'Z'
 
     barset = None
     i = 0
@@ -77,22 +83,23 @@ def get_prices_with_start_end(symbols, end_dt,start_dt):
 
 
 def get_prices_with_lookback(symbols, end_dt, lookback=consts.lookback):
-    start_dt = end_dt - pd.Timedelta(str(lookback)+' days')
+    start_dt = end_dt - pd.Timedelta(str(lookback) + ' days')
     return get_prices_with_start_end(symbols, end_dt=end_dt, start_dt=start_dt)
 
 
 def get_share_numbers(total_dollar, weights):
-    #df = pd.DataFrame(columns=consts.columns)
-    #df.loc[0] = weights
-    dollar_values = weights*total_dollar
+    # df = pd.DataFrame(columns=consts.columns)
+    # df.loc[0] = weights
+    dollar_values = weights * total_dollar
     prices = current_prices(consts.columns)
     numshares = pd.DataFrame()
     for column in prices.columns:
-        numshares.loc[:,column[0]] = [prices.loc[:,column[0]].loc[:,'close'][0]]
-    numshares= dollar_values/numshares
+        numshares.loc[:, column[0]] = [prices.loc[:, column[0]].loc[:, 'close'][0]]
+    numshares = dollar_values / numshares
     return numshares
 
-def trade(orders, wait = 100):
+
+def trade(orders, wait=100):
     sells = [o for o in orders if o['side'] == 'sell']
     for order in sells:
         try:
@@ -101,23 +108,23 @@ def trade(orders, wait = 100):
                 symbol=order['symbol'],
                 qty=order['qty'],
                 side='sell',
-                type = 'market',
+                type='market',
                 time_in_force='day'
             )
         except Exception as e:
             logging.error(e)
     count = wait
     pending = consts.api.list_orders()
-    while len(pending)>0:
+    while len(pending) > 0:
         pending = consts.api.list_orders()
-        if len(pending)==0:
+        if len(pending) == 0:
             logging.info('---------all sell orders done---------')
             break
         logging.info(f'{len(pending)} sell orders pending...')
         time.sleep(1)
-        count -=1
+        count -= 1
 
-    buys = [o for o in orders if o['side']=='buy']
+    buys = [o for o in orders if o['side'] == 'buy']
     for order in buys:
         try:
             logging.info(f'submit (buy):{order} for {order["qty"]} shares')
@@ -125,7 +132,7 @@ def trade(orders, wait = 100):
                 symbol=order['symbol'],
                 qty=order['qty'],
                 side='buy',
-                type = 'market',
+                type='market',
                 time_in_force='day'
             )
         except Exception as e:

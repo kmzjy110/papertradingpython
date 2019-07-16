@@ -1,1 +1,19 @@
-{"AAPL TXN": {"inShort": "True", "inLong": "False"}, "DG WMT": {"inShort": "True", "inLong": "False"}, "NFLX DISCK": {"inShort": "True", "inLong": "False"}, "CRM IBM": {"inShort": "True", "inLong": "False"}, "REMAINING_CASH": 5000}
+{
+  "AAPL TXN": {
+    "inShort": "True",
+    "inLong": "False"
+  },
+  "DG WMT": {
+    "inShort": "True",
+    "inLong": "False"
+  },
+  "NFLX DISCK": {
+    "inShort": "True",
+    "inLong": "False"
+  },
+  "CRM IBM": {
+    "inShort": "True",
+    "inLong": "False"
+  },
+  "REMAINING_CASH": 5000
+}
