@@ -1,0 +1,2 @@
+asset_class,asset_id,avg_entry_price,change_today,cost_basis,current_price,exchange,lastday_price,market_value,qty,side,symbol,unrealized_intraday_pl,unrealized_intraday_plpc,unrealized_pl,unrealized_plpc
+us_equity,3f3e0ff9-599f-4fec-8842-6bc53f5129a1,114.71,-0.001913376239346,-688.26,114.76,NYSE,114.98,-688.56,-6,short,WMT,1.32,0.001913376239346,-0.3,-0.0004358817888589
