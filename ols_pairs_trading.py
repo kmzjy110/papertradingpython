@@ -10,7 +10,7 @@ def get_portfolio_weights(symbol_pairs, lookback=consts.lookback, set_status=Fal
     target_weights = helper.get_current_portfolio_weights()
     delta = False
     current_zscores = {}
-    strategy_status = get_current_strategy_status()
+    strategy_status = get_current_strategy_status() #todo: move set status to somewhere else (refactor with trading?)
     for (x, y) in symbol_pairs:
 
         query_string = x + ' ' + y

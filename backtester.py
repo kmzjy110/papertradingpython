@@ -36,7 +36,7 @@ class BacktestEngine:
         for symbol in symbols_involved:
             self.aggregate_assets[symbol] = alpaca_api.get_asset(symbol)
         self.order_columns = ['id', 'client_order_id', 'created_at', 'updated_at', 'submitted_at', 'filled_at', 'expired_at', 'canceled_at', 'failed_at', 'asset_id', 'symbol', 'asset_class', 'qty', 'filled_qty', 'filled_avg_price', 'order_type', 'type', 'side', 'time_in_force', 'limit_price', 'stop_price', 'status']
-        self.position_columns = ['asset_class', 'asset_id', 'avg_entry_price', 'change_today', 'cost_basis', 'current_price', 'exchange', 'lastday_price', 'market_value', 'qty', 'side', 'symbol', 'unrealized_intraday_pl', 'unrealized_intraday_plpc', 'unrealized_pl', 'unrealized_plpc'];
+        self.position_columns = ['asset_class', 'asset_id', 'avg_entry_price', 'change_today', 'cost_basis', 'current_price', 'exchange', 'lastday_price', 'market_value', 'qty', 'side', 'symbol', 'unrealized_intraday_pl', 'unrealized_intraday_plpc', 'unrealized_pl', 'unrealized_plpc']
 
     def get_clock(self):
         clock_raw = {"timestamp": self.current_time.isoformat() + 'Z', "is_open": self.check_is_open(self.current_time),
