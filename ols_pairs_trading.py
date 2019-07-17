@@ -43,10 +43,8 @@ def get_portfolio_weights(symbol_pairs, lookback=consts.lookback, set_status=Fal
                 (strategy_status[query_string]['inLong'] == 'True') and zscore > 0.0):
             strategy_status[query_string]['inShort'] = 'False'
             strategy_status[query_string]['inLong'] = 'False'
-            x_target_weight = 0
-            y_target_weight = 0
-            target_weights[x] = x_target_weight.values
-            target_weights[y] = y_target_weight.values
+            target_weights[x][0] = 0
+            target_weights[y][0] = 0
             delta = True
         if not strategy_status[query_string]['inLong'] == 'True' and zscore < -1:
             y_target_shares = 1
@@ -122,7 +120,7 @@ def get_holding_percentage(xShares, yShares, xPrice, yPrice):
 
 
 def build_orders(cash=5000):
-    weights, delta = get_portfolio_weights(consts.pairs)
+    weights, delta, _ = get_portfolio_weights(consts.pairs)
     if not delta:
         return []
     target_num_shares = helper.get_share_numbers(cash,
@@ -138,13 +136,15 @@ def build_orders(cash=5000):
 
     for column in order_df.columns:
         rounded = round(order_df.loc[:, column].loc[0])
-        if (rounded == 0) and (not order_df.loc[:, column].loc[0] == 0):
+        if (rounded == 0) and ( order_df.loc[:, column].loc[0] >= 0.2):
             logging.error("rounded to 0!")
             raise Exception('rounded to 0!')
         order_df.loc[:, column].loc[0] = rounded
 
     for column in order_df.columns:
         num = order_df.loc[:, column][0]
+        if num==0:
+            continue
         if num < 0:
             orders.append({
                 'symbol': column,

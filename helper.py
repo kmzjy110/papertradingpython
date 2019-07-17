@@ -100,6 +100,8 @@ def get_share_numbers(total_dollar, weights):
 
 
 def trade(orders, wait=100):
+    if not orders:
+        return
     sells = [o for o in orders if o['side'] == 'sell']
     for order in sells:
         try:
