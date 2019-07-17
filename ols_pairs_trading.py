@@ -37,7 +37,6 @@ def get_portfolio_weights(symbol_pairs, lookback=consts.lookback, set_status=Fal
         if (not x in target_weights) or (not y in target_weights):
             target_weights.loc[:, x] = [0]
             target_weights.loc[:, y] = [0]
-            delta = True
 
         if ((strategy_status[query_string]['inShort'] == 'True') and zscore < 0.0) or (
                 (strategy_status[query_string]['inLong'] == 'True') and zscore > 0.0):
