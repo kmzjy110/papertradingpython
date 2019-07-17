@@ -30,6 +30,7 @@ experiment_end_day = pd.Timestamp(year=2019, month=7, day=1, tz=NY)
 # tests.test_pairs()
 # prices = helper.prices_up_to_yesterday('AAPL')
 
+positions = consts.api.list_positions()
 
 weights, delta, zscores = ols_pairs_trading.get_portfolio_weights(consts.pairs)
 

@@ -91,17 +91,23 @@ class BacktestEngine:
             pd.Timestamp(start, tz=consts.NY) <= Bar.t <= pd.Timestamp(end, tz=consts.NY)]
         return symbol_bars
     def list_positions(self):
-
+        #TODO:check file creation
+        positions_raw = self.read_positions_raw()
         positions = []
+        for raw in positions_raw:
+            positions.append(alpaca_trade_api.rest.Position(raw))
+        return positions
+
+    def read_positions_raw(self):
+        positions_raw =[]
         with open("backtest_positions.csv", mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
-                positions.append(alpaca_trade_api.rest.Position(row))
-        return positions
-        pass
+                positions_raw.append(row)
+        return positions_raw
 
     def list_orders(self):
-        #TODO: time
+        #TODO: list orders between certain times
         orders = []
         with open("backtest_orders.csv", mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
@@ -111,11 +117,12 @@ class BacktestEngine:
 
 
     def submit_order(self, symbol, qty, side, type, time_in_force, limit_price = None, stop_price = None, extended_hours=False):  # write to excel, modify positions too
-
+        # TODO: UPDATE POSITIONS
+        # TODO: keep track of all positions of backtest
+        
         #TODO: simulate full submit_order to include limit
         #TODO: INDEX CHECKING FOR PRICES BARSET
-        #TODO: UPDATE POSITIONS
-        #TODO: keep track of all positions of backtest
+
         order = {}
         order["id"] =str(uuid.uuid4())
         order["client_order_id"] = str(uuid.uuid4())
@@ -146,6 +153,23 @@ class BacktestEngine:
                 writer.writerow(order)
         except IOError:
             logging.error('I/O Error')
+            return
+
+        positions_raw = self.read_positions_raw()
+        cur_position = None
+        for raw in positions_raw:
+            if raw["symbol"]==symbol:
+                cur_position=raw
+
+        if cur_position is not None: #TODO: figure out how to update position
+            """notes: cost_basis = avg entry * num shares
+market value = current price * num shares
+unrealized pl = total pl
+unrealized intraday pl = pl today
+pl percentage  = (cur price - prev price) / prev price
+"""
+            pass
+
         pass
 
 
