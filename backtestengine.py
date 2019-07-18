@@ -1,10 +1,6 @@
-import alpaca_trade_api
-import pandas as pd
-import json
-import consts
-import uuid
 import csv
 import logging
+
 
 class BacktestEngine:
 
@@ -13,193 +9,34 @@ class BacktestEngine:
         self.end_date = end_date
         self.api = api
         self.list_assets = list_assets
+        self.order_columns = ['id', 'client_order_id', 'created_at', 'updated_at', 'submitted_at', 'filled_at',
+                              'expired_at', 'canceled_at', 'failed_at', 'asset_id', 'symbol', 'asset_class', 'qty',
+                              'filled_qty', 'filled_avg_price', 'order_type', 'type', 'side', 'time_in_force',
+                              'limit_price', 'stop_price', 'status']
+        self.position_columns = ['asset_class', 'asset_id', 'avg_entry_price', 'change_today', 'cost_basis',
+                                 'current_price', 'exchange', 'lastday_price', 'market_value', 'qty', 'side', 'symbol',
+                                 'unrealized_intraday_pl', 'unrealized_intraday_plpc', 'unrealized_pl',
+                                 'unrealized_plpc']
 
     def do_backtest(self):
+        #TODO:need to update position daily omg
         pass
-
-
-# functionalities: read-write backtesting results and displaying it
-# class BacktestResultsReader
-class BacktestAPI: #TODO:separate engine and API methods to allow only API methods in the API
-    def __init__(self, current_time, start_date, end_date, symbols_involved, alpaca_api, max_lookback=consts.lookback,
-                 timeframe='day'):
-        self.current_time = current_time
-        self.start_date = start_date
-        self.end_date = end_date
-        self.symbols_involved = symbols_involved
-        self.timeframe = timeframe
-        start = ((start_date - pd.Timedelta(str(max_lookback+1) + ' days')).replace(second=0, microsecond=0).isoformat()[
-                 :consts.iso_format_string_adjust]) + 'Z';
-        # TODO:subtracted 1 more day to allow lastday price, try to handle starting on a monday
-
-
-        end = (end_date.replace(second=0, microsecond=0).isoformat()[:consts.iso_format_string_adjust]) + 'Z'
-        self.aggregate_prices = alpaca_api.get_barset(symbols_involved, timeframe, limit=1000, start=start, end=end)
-
-        self.aggregate_assets = {}
-        for symbol in symbols_involved:
-            self.aggregate_assets[symbol] = alpaca_api.get_asset(symbol)
-        self.order_columns = ['id', 'client_order_id', 'created_at', 'updated_at', 'submitted_at', 'filled_at', 'expired_at', 'canceled_at', 'failed_at', 'asset_id', 'symbol', 'asset_class', 'qty', 'filled_qty', 'filled_avg_price', 'order_type', 'type', 'side', 'time_in_force', 'limit_price', 'stop_price', 'status']
-        self.position_columns = ['asset_class', 'asset_id', 'avg_entry_price', 'change_today', 'cost_basis', 'current_price', 'exchange', 'lastday_price', 'market_value', 'qty', 'side', 'symbol', 'unrealized_intraday_pl', 'unrealized_intraday_plpc', 'unrealized_pl', 'unrealized_plpc']
-
-    def get_clock(self):
-        clock_raw = {"timestamp": self.current_time.isoformat() + 'Z', "is_open": self.check_is_open(self.current_time),
-                     "next_open": self.get_next_open(self.current_time),
-                     "next_close": self.get_next_close(self.current_time)}
-        return alpaca_trade_api.rest.Clock(clock_raw)
-
-    def get_next_open(self, timestamp):
-        if self.check_is_open(timestamp):
-            timestamp = timestamp + pd.Timedelta("1 day")
-
-        if timestamp.dayofweek > 4:
-            timestamp = timestamp + pd.Timedelta(str(7 - timestamp.dayofweek) + " days")
-
-        return timestamp.replace(hour=9, minute=30, second=0, microsecond=0)
-
-    def get_next_close(self, timestamp):
-        if self.check_is_open(timestamp):
-            return timestamp.replace(hour=16, minute=0, second=0, microsecond=0)
-
-        return self.get_next_open(timestamp).replace(hour=16, minute=0, second=0, microsecond=0)
-
-    def check_is_open(self, timestamp):
-        if timestamp.dayofweek >= 5:
-            return False
-        if timestamp.hour < 9 or timestamp.hour > 16:
-            return False
-        if timestamp.hour == 9 and timestamp.minute < 30:
-            return False
-        return True
-
-    def get_barset(self, symbols, timeframe, limit, start, end):
-        if type(symbols)==str:
-            return alpaca_trade_api.rest.BarSet({symbols:self.get_bar(symbols,timeframe,limit,start,end)})
-        barset_dict = {}
-        for symbol in symbols:
-            symbol_bars = self.get_bar(symbol,timeframe,limit,start,end)
-            barset_dict[symbol] = symbol_bars
-        return alpaca_trade_api.rest.BarSet(barset_dict)
-        pass
-    def get_bar(self, symbol, timeframe,limit,start,end):
-        bars = self.aggregate_prices[symbol]
-        symbol_bars = [{
-            't': int(Bar.t.value / 1e9),
-            'o': Bar.o,
-            'h': Bar.h,
-            'l': Bar.l,
-            'c': Bar.c,
-            'v': Bar.v
-        }
-            for Bar in bars if
-            pd.Timestamp(start, tz=consts.NY) <= Bar.t <= pd.Timestamp(end, tz=consts.NY)]
-        return symbol_bars
-    def list_positions(self):
-        #TODO:check file creation
-        positions_raw = self.read_positions_raw()
-        positions = []
-        for raw in positions_raw:
-            positions.append(alpaca_trade_api.rest.Position(raw))
-        return positions
 
     def read_positions_raw(self):
-        positions_raw =[]
+        positions_raw = []
+
+        # TODO:check file creation
         with open("backtest_positions.csv", mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
                 positions_raw.append(row)
         return positions_raw
 
-    def list_orders(self):
-        #TODO: list orders between certain times
-        orders = []
-        with open("backtest_orders.csv", mode='r') as csv_file:
-            csv_reader = csv.DictReader(csv_file)
-            for row in csv_reader:
-                orders.append(alpaca_trade_api.rest.Order(row))
-        return orders
-
-
-    def submit_order(self, symbol, qty, side, type, time_in_force, limit_price = None, stop_price = None, extended_hours=False):  # write to excel, modify positions too
-        # TODO: UPDATE POSITIONS
-        # TODO: keep track of all positions of backtest
-
-        #TODO: simulate full submit_order to include limit
-        #TODO: INDEX CHECKING FOR PRICES BARSET
-
-        order = {}
-        order["id"] =str(uuid.uuid4())
-        order["client_order_id"] = str(uuid.uuid4())
-        order["created_at"] = self.current_time.isoformat()+'Z'
-        order["updated_at"] = self.current_time.isoformat()+'Z'
-        order["submitted_at"] = self.current_time.isoformat()+'Z'
-        order["filled_at"] = self.current_time.isoformat()+'Z'
-        order["expired_at"]=None
-        order["canceled_at"]=None
-        order["failed_at"]=None
-        order["asset_id"] = self.aggregate_assets[symbol].id
-        order["symbol"]=symbol
-        order["asset_class"]=self.aggregate_assets[symbol].__getattr__("class")
-        order["qty"] = qty
-        order["filled_qty"] = qty
-        order["filled_avg_price"]= str(self.aggregate_prices.df[symbol].loc[self.current_time].loc['close'])#maybe try averaging all 4 prices?
-        order["order_type"] = type
-        order["type"]=type
-        order["side"]=side
-        order["time_in_force"] = time_in_force
-        order["limit_price"]=limit_price
-        order["stop_price"]=stop_price
-        order["status"]="filled"
-
-        try:
-            with open("backtest_orders.csv", "a") as csvfile:
-                writer = csv.DictWriter(csvfile,fieldnames=self.order_columns)
-                writer.writerow(order)
-        except IOError:
-            logging.error('I/O Error')
-            return
-
-        positions_raw = self.read_positions_raw()
-        cur_position = None
-        for raw in positions_raw:
-            if raw["symbol"]==symbol:
-                cur_position=raw
-
-        if cur_position is not None: #TODO: figure out how to update position
-            """notes: cost_basis = avg entry * num shares
-market value = current price * num shares
-unrealized pl = total pl
-unrealized intraday pl = pl today
-pl percentage  = (cur price - prev price) / prev price
-"""
-            pass
-        else:
-            cur_position={}
-            cur_position["asset_id"] = order["asset_id"]
-            cur_position["symbol"] = order["symbol"]
-            cur_position["exchange"] = self.aggregate_assets[symbol].exchange
-            cur_position["asset_class"] = order["asset_class"]
-            cur_position["qty"] = order["qty"]
-            cur_position["avg_entry_price"] = order["filled_avg_price"]
-            cur_position["side"]=order["side"]
-            cur_position["market_value"] = float(order["filled_avg_price"])*int(order["filled_qty"])
-            cur_position["cost_basis"] = cur_position["market_value"]
-            cur_position["unrealized_pl"] = str(0)
-            cur_position["unrealized_plpc"] = str(0)
-            cur_position["unrealized_intraday_pl"]=str(0)
-            cur_position["unrealized_intraday_plpc"] = str(0)
-            cur_position["current_price"] = order["filled_avg_price"]
-            cur_position["lastday_price"] = self.aggregate_prices.df[symbol].loc[:self.current_time]["close"][-2]
-            cur_position["change_today"]=str(0) #not supported with daily backtest frequency
-            self.append_to_cur_position(cur_position)
-            self.append_to_position_all(cur_position) #TODO:TEST all updating position methods
-
-        pass
     def update_position(self, position_raw):
         positions_raw = self.read_positions_raw()
         for i in range(len(positions_raw)):
             if positions_raw[i]["symbol"] == position_raw["symbol"]:
-                positions_raw[i]=position_raw
+                positions_raw[i] = position_raw
                 break
         try:
             with open("backtest_positions.csv", "w") as csvfile:
@@ -210,29 +47,38 @@ pl percentage  = (cur price - prev price) / prev price
         except IOError:
             logging.error("I/O Error:" + "backtest_positions.csv")
 
-    def append_to_cur_position(self, position_raw): #TODO:REFACTOR METHODS w append_to_position_all
- #TODO:MOVE THESE METHODS INTO ENGINE AND ALLOW CUSTOM FILE NAMES
-        try:
-            with open("backtest_positions.csv", "a") as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=self.position_columns)
-                writer.writerow(position_raw)
-        except IOError:
-            logging.error('I/O Error:' + "backtest_positions.csv")
-            return
+    def append_to_cur_position(self, position_raw):
+        return self.append_row_to_csv("backtest_positions.csv", position_raw, self.position_columns)
 
     def append_to_position_all(self, position_raw):
+        return self.append_row_to_csv("backtest_positions_all.csv", position_raw, self.position_columns)
+
+    def append_row_to_csv(self, filename, raw_data, fieldnames):
         try:
-            with open("backtest_positions_all.csv","a") as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=self.position_columns)
-                writer.writerow(position_raw)
+            with open(filename, "a") as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writerow(raw_data)
+            return True
         except IOError:
-            logging.error('I/O Error:'+"backtest_positions_all.csv")
+            logging.error('I/O Error:' + filename)
+            return False
 
-    def get_account(self): #https://docs.alpaca.markets/margin-and-shorting/
-        pass
+    def write_order(self, order_raw):
+        return self.append_row_to_csv("backtest_orders.csv", order_raw, self.order_columns)
 
-
-
-
-    def get_asset(self):
-        pass
+    def del_position_and_update_cash(self, symbol,cash_add):
+        positions_raw = self.read_positions_raw()
+        for i in range(len(positions_raw)):
+            if positions_raw[i]["symbol"] == symbol:
+                positions_raw[i] = None
+                break
+        try:
+            with open("backtest_positions.csv", "w") as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=self.position_columns)
+                writer.writeheader()
+                for pos in positions_raw:
+                    if pos is not None:
+                        writer.writerow(pos)
+                #TODO:UPDATE ACCOUNT CASH
+        except IOError:
+            logging.error("I/O Error:" + "backtest_positions.csv")

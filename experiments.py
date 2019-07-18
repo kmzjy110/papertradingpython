@@ -32,9 +32,9 @@ experiment_end_day = pd.Timestamp(year=2019, month=7, day=1, tz=NY)
 
 #positions = consts.api.list_positions()
 
-#weights, delta, zscores = ols_pairs_trading.get_portfolio_weights(consts.pairs)
+weights, delta, zscores = ols_pairs_trading.get_portfolio_weights(consts.pairs)
 
-
+account = consts.api.get_account()
 
 #orders = consts.api.list_orders(status="all",limit=50, after = pd.Timestamp(2019,7,12))
 
@@ -51,7 +51,7 @@ BacktesterAPI = backtestengine.BacktestAPI(current_time=current_time, start_date
                                            symbols_involved=symbols, alpaca_api=consts.api)
 #df = BacktesterAPI.get_barset('NFLX','day',200,start_day,end_day).df
 #orders = BacktesterAPI.list_orders()
-positions_raw = BacktesterAPI.read_positions_raw()
+
 
 
 print("a")
