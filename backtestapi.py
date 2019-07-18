@@ -5,14 +5,14 @@ import uuid
 import csv
 
 class BacktestAPI:
-    def __init__(self, current_time, start_date, end_date, symbols_involved, alpaca_api, backtest_engine,
+    def __init__(self, current_time, start_date, end_date, symbols_involved, alpaca_api, backtest_helper,
                  max_lookback=consts.lookback, timeframe='day'):
-        self.current_time = current_time
+        self.current_time = current_time #TODO:FUTURE consider refactoring current time between helper and api
         self.start_date = start_date
         self.end_date = end_date
         self.symbols_involved = symbols_involved
         self.timeframe = timeframe
-        self.backtest_engine = backtest_engine
+        self.backtest_helper = backtest_helper
         start = ((start_date - pd.Timedelta(str(max_lookback + 3) + ' days')).replace(second=0,
                                                                                       microsecond=0).isoformat()[
                  :consts.iso_format_string_adjust]) + 'Z'
@@ -80,7 +80,7 @@ class BacktestAPI:
         return symbol_bars
 
     def list_positions(self):
-        positions_raw = self.backtest_engine.read_positions_raw()
+        positions_raw = self.backtest_helper.read_positions_raw()
         positions = []
         for raw in positions_raw:
             positions.append(alpaca_trade_api.rest.Position(raw))
@@ -126,18 +126,21 @@ class BacktestAPI:
         order["stop_price"] = stop_price
         order["status"] = "filled"
 
-        success = self.backtest_engine.write_order(order)
+        transaction_cash = float(order["qty"]) * float(order["filled_avg_price"])
+        if order["side"]=="buy":
+           transaction_cash = transaction_cash * -1
+
+        success = self.backtest_helper.write_order(order)
         if not success:
             return
 
-        positions_raw = self.backtest_engine.read_positions_raw()
+        positions_raw = self.backtest_helper.read_positions_raw()
         cur_position = None
         for raw in positions_raw:
             if raw["symbol"] == symbol:
                 cur_position = raw
         is_position_update = False
         closed_out = False
-        cash_add=None
         if cur_position is not None:
             # TODO:somehow verify the calcs from actual API
             is_position_update = True
@@ -180,28 +183,32 @@ class BacktestAPI:
         if not closed_out:
             cur_position["unrealized_pl"] = cur_position["market_value"] - cur_position["cost_basis"]
             cur_position["unrealized_plpc"] = cur_position["unrealized_pl"] / cur_position["cost_basis"]
+            if int(cur_position["qty"]) < 0:
+                cur_position["side"] = "short"
+            else:
+                cur_position["side"] = "long"
+
+            for key in cur_position.keys():
+                cur_position[key] = str(cur_position[key])
+
+            if is_position_update:
+                self.backtest_helper.update_position(cur_position)
+            if not is_position_update:
+                self.backtest_helper.append_to_cur_position(cur_position)
         else:
-            self.backtest_engine.del_position_and_update_cash(cur_position["symbol"],cash_add)
-            self.backtest_engine.append_to_position_all(cur_position)
-            return
+            self.backtest_helper.del_position(cur_position["symbol"])
 
-        if int(cur_position["qty"]) < 0:
-            cur_position["side"] = "short"
-        else:
-            cur_position["side"] = "long"
-
-        for key in cur_position.keys():
-            cur_position[key] = str(cur_position[key])
-
-        if is_position_update:
-            self.backtest_engine.update_position(cur_position)
-        if not is_position_update:
-            self.backtest_engine.append_to_cur_position(cur_position)
-
-        self.backtest_engine.append_to_position_all(cur_position)  # TODO:TEST all updating position methods and calculations ughhhhh
+        self.backtest_helper.append_to_position_hist(cur_position)
+        self.backtest_helper.update_account(transaction_cash)
 
     def get_account(self):  # https://docs.alpaca.markets/margin-and-shorting/
-        pass
+        #cash = equity -long plus abs(short)
+        #equity = cash +long - abs(short)
+        # buying power = regt buying power?
+        # buying power = (equity - initial margin) * factor
+        # maintenance_margin = (long + abs(short))* 0.3 (see link for complete table)
+        #initial_margin = (long + abs(short)) *0.5
+        return alpaca_trade_api.rest.Account(self.backtest_helper.read_account_raw())
 
     def get_asset(self, symbol):
         return self.alpaca_api.get_asset(symbol)

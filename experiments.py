@@ -4,7 +4,7 @@ import json
 import alpaca_trade_api
 import pandas as pd
 
-import backtestengine
+import backtesthelper
 import consts
 import ols_pairs_trading
 import csv
@@ -35,6 +35,7 @@ experiment_end_day = pd.Timestamp(year=2019, month=7, day=1, tz=NY)
 weights, delta, zscores = ols_pairs_trading.get_portfolio_weights(consts.pairs)
 
 account = consts.api.get_account()
+positions = consts.api.list_positions()
 
 #orders = consts.api.list_orders(status="all",limit=50, after = pd.Timestamp(2019,7,12))
 
@@ -47,7 +48,7 @@ account = consts.api.get_account()
 #print(type('NFLX')==str)
 
 
-BacktesterAPI = backtestengine.BacktestAPI(current_time=current_time, start_date=start_day, end_date=end_day,
+BacktesterAPI = backtesthelper.BacktestAPI(current_time=current_time, start_date=start_day, end_date=end_day,
                                            symbols_involved=symbols, alpaca_api=consts.api)
 #df = BacktesterAPI.get_barset('NFLX','day',200,start_day,end_day).df
 #orders = BacktesterAPI.list_orders()
