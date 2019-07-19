@@ -1,1 +1,2 @@
 id,client_order_id,created_at,updated_at,submitted_at,filled_at,expired_at,canceled_at,failed_at,asset_id,symbol,asset_class,qty,filled_qty,filled_avg_price,order_type,type,side,time_in_force,limit_price,stop_price,status
+30ba9525-cd4c-4143-b7cd-26c2e3ca607f,ad140f92-b1b1-4c45-90fb-2b338c507ae2,2019-05-28T00:00:00Z,2019-05-28T00:00:00Z,2019-05-28T00:00:00Z,2019-05-28T00:00:00Z,,,,cf80d13f-470c-4947-8593-c5e098aeba4e,CRM,us_equity,4.0,4.0,155.15,market,market,sell,day,,,filled
