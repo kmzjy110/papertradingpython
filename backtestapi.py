@@ -47,6 +47,8 @@ class BacktestAPI:
         return self.get_next_open(timestamp).replace(hour=16, minute=0, second=0, microsecond=0)
 
     def check_is_open(self, timestamp):
+        if self.timeframe=='day':
+            return True
         if timestamp.dayofweek >= 5:
             return False
         if timestamp.hour < 9 or timestamp.hour > 16:
@@ -55,7 +57,7 @@ class BacktestAPI:
             return False
         return True
 
-    def get_barset(self, symbols, timeframe, limit, start, end):
+    def get_barset(self, symbols, timeframe, start, end, limit=200):
         if type(symbols) == str:
             return alpaca_trade_api.rest.BarSet({symbols: self.get_bar(symbols, timeframe, limit, start, end)})
         barset_dict = {}
@@ -63,9 +65,10 @@ class BacktestAPI:
             symbol_bars = self.get_bar(symbol, timeframe, limit, start, end)
             barset_dict[symbol] = symbol_bars
         return alpaca_trade_api.rest.BarSet(barset_dict)
-        pass
 
     def get_bar(self, symbol, timeframe, limit, start, end):
+        start = start[:consts.iso_format_string_adjust]
+        end=end[:consts.iso_format_string_adjust]
         bars = self.aggregate_prices[symbol]
         symbol_bars = [{
             't': int(Bar.t.value / 1e9),
@@ -100,6 +103,7 @@ class BacktestAPI:
 
         # TODO: simulate full submit_order to include limit
         # TODO: INDEX CHECKING FOR PRICES BARSET
+        #TODO:Check account balance before placing order
 
         order = {}
         order["id"] = str(uuid.uuid4())
@@ -201,14 +205,8 @@ class BacktestAPI:
         self.backtest_helper.append_to_position_hist(cur_position)
         self.backtest_helper.update_account(transaction_cash)
 
-    def get_account(self):  # https://docs.alpaca.markets/margin-and-shorting/
-        #cash = equity -long plus abs(short)
-        #equity = cash +long - abs(short)
-        # buying power = regt buying power?
-        # buying power = (equity - initial margin) * factor
-        # maintenance_margin = (long + abs(short))* 0.3 (see link for complete table)
-        #initial_margin = (long + abs(short)) *0.5
+    def get_account(self):
         return alpaca_trade_api.rest.Account(self.backtest_helper.read_account_raw())
 
     def get_asset(self, symbol):
-        return self.alpaca_api.get_asset(symbol)
+        return self.aggregate_assets[symbol]

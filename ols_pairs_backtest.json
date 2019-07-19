@@ -1,0 +1,19 @@
+{
+  "AAPL TXN": {
+    "inShort": "False",
+    "inLong": "False"
+  },
+  "DG WMT": {
+    "inShort": "False",
+    "inLong": "False"
+  },
+  "NFLX DISCK": {
+    "inShort": "False",
+    "inLong": "False"
+  },
+  "CRM IBM": {
+    "inShort": "False",
+    "inLong": "False"
+  },
+  "REMAINING_CASH": 0
+}

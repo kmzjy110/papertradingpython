@@ -1,2 +1,1 @@
 id,client_order_id,created_at,updated_at,submitted_at,filled_at,expired_at,canceled_at,failed_at,asset_id,symbol,asset_class,qty,filled_qty,filled_avg_price,order_type,type,side,time_in_force,limit_price,stop_price,status
-028b2a2e-46ab-43d7-9ac4-c2f1c145bbc8,190cb646-3eee-4423-9978-f1b8d079cf7e,2019-05-20T00:00:00Z,2019-05-20T00:00:00Z,2019-05-20T00:00:00Z,2019-05-20T00:00:00Z,,,,bb2a26c0-4c77-4801-8afc-82e8142ac7b8,NFLX,us_equity,1,1,348.05,market,market,buy,day,,,filled

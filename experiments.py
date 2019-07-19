@@ -9,6 +9,16 @@ import consts
 import ols_pairs_trading
 import csv
 import helper
+import backtestengine
+
+start_day = pd.Timestamp(2019, 5, 18, 9, 30)
+end_day = pd.Timestamp(2019, 7, 16)
+
+
+
+engine = backtestengine.BacktestEngine()
+engine.do_backtest()
+
 
 lookback = 20
 NY = 'America/New_York'
