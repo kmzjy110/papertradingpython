@@ -128,7 +128,7 @@ class BacktestAPI:
         order["stop_price"] = stop_price
         order["status"] = "filled"
 
-        transaction_cash = float(order["qty"]) * float(order["filled_avg_price"])
+        transaction_cash = round(float(order["qty"]) * float(order["filled_avg_price"]),2)
         if order["side"]=="buy":
            transaction_cash = transaction_cash * -1
         order["qty"] = str(int(float(order["qty"])))
@@ -178,8 +178,8 @@ class BacktestAPI:
 
         cur_position["current_price"] = order["filled_avg_price"]
         cur_position["lastday_price"] = self.aggregate_prices.df[symbol].loc[:self.current_time]["close"][-2]
-        cur_position["market_value"] = float(cur_position["current_price"]) * float(cur_position["qty"])
-        cur_position["cost_basis"] = float(cur_position["avg_entry_price"]) * float(cur_position["qty"])
+        cur_position["market_value"] = round(float(cur_position["current_price"]) * float(cur_position["qty"]),2)
+        cur_position["cost_basis"] = round(float(cur_position["avg_entry_price"]) * float(cur_position["qty"]),2)
 
         # TODO:FUTURE FEATURE INCLUDE INTRADAY STUFF
         cur_position["unrealized_intraday_pl"] = 0
@@ -188,8 +188,8 @@ class BacktestAPI:
 
         cur_position["qty"] = str(int(float(cur_position["qty"])))
         if not closed_out:
-            cur_position["unrealized_pl"] = cur_position["market_value"] - cur_position["cost_basis"]
-            cur_position["unrealized_plpc"] = cur_position["unrealized_pl"] / cur_position["cost_basis"]
+            cur_position["unrealized_pl"] = round(cur_position["market_value"] - cur_position["cost_basis"],2)
+            cur_position["unrealized_plpc"] = round(cur_position["unrealized_pl"] / cur_position["cost_basis"],2)
             if float(cur_position["qty"]) < 0:
                 cur_position["side"] = "short"
             else:

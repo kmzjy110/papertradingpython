@@ -62,6 +62,7 @@ class BacktestHelper:
         account["daytrade_count"]=0
 
         self.write_account_data(account)
+        account["time"]=self.current_time
         self.write_to_csv(self.backtest_account_hist_filename, account, self.account_columns_with_time, 1)
 
 
@@ -150,18 +151,18 @@ class BacktestHelper:
         sum_shorts = sum([float(p["market_value"]) for p in positions if p["side"] == "short"])
         sum_longs = sum([float(p["market_value"]) for p in positions if p["side"] == "long"])
 
-        account["cash"] = float(account["cash"])+transaction_cash
+        account["cash"] = round(float(account["cash"])+transaction_cash,2)
         account["multiplier"] = self.get_account_buying_power_factor(account["cash"])
         account["long_market_value"] = sum_longs
         account["short_market_value"] = sum_shorts
         account["last_equity"] = account["equity"]
-        account["equity"] = account["cash"] + account["long_market_value"] + account["short_market_value"]
+        account["equity"] = round(account["cash"] + account["long_market_value"] + account["short_market_value"],2)
         account["portfolio_value"] = account["equity"]
-        account["initial_margin"] = (sum_longs + abs(sum_shorts)) *0.5
-        account["buying_power"] = (account["equity"] - account["initial_margin"]) * account["multiplier"]
+        account["initial_margin"] = round((sum_longs + abs(sum_shorts)) *0.5,2)
+        account["buying_power"] = round((account["equity"] - account["initial_margin"]) * account["multiplier"],2)
         account["regt_buying_power"] = account["buying_power"]
         account["last_maintenance_margin"] = account["maintenance_margin"]
-        account["maintenance_margin"] = self.get_maintenance_margin(positions)
+        account["maintenance_margin"] = round(self.get_maintenance_margin(positions),2)
 
         for key in account.keys():
             account[key] = str(account[key])
