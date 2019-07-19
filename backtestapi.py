@@ -47,8 +47,6 @@ class BacktestAPI:
         return self.get_next_open(timestamp).replace(hour=16, minute=0, second=0, microsecond=0)
 
     def check_is_open(self, timestamp):
-        if self.timeframe=='day':
-            return True
         if timestamp.dayofweek >= 5:
             return False
         if timestamp.hour < 9 or timestamp.hour > 16:
@@ -121,7 +119,7 @@ class BacktestAPI:
         order["qty"] = str(qty)
         order["filled_qty"] = str(qty)
         order["filled_avg_price"] = str(
-            self.aggregate_prices.df[symbol].loc[self.current_time].loc['close'])  # maybe try averaging all 4 prices?
+            self.aggregate_prices.df[symbol].loc[self.current_time].loc['close'])  # maybe try averaging all 4 prices?TODO:Optimize df
         order["order_type"] = type
         order["type"] = type
         order["side"] = side

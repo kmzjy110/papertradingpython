@@ -15,7 +15,7 @@ class OLSPairsTradingAlgo:
         self.status_file_name = status_file_name
         self.api=api
         self.symbols = symbols
-        self.initiate_strategy_status()
+        self.initiate_strategy_status(checkfile=False)
 
         self.helper = helper.Helper(self.api,self.symbols,lookback, self.get_current_strategy_status())
 
@@ -56,8 +56,8 @@ class OLSPairsTradingAlgo:
                     (strategy_status[query_string]['inLong'] == 'True') and zscore > 0.0):
                 strategy_status[query_string]['inShort'] = 'False'
                 strategy_status[query_string]['inLong'] = 'False'
-                target_weights[x][0] = 0
-                target_weights[y][0] = 0
+                target_weights.loc[:, x] = [0]
+                target_weights.loc[:, y] = [0]
                 delta = True
             if not strategy_status[query_string]['inLong'] == 'True' and zscore < -1:
                 y_target_shares = 1
@@ -92,26 +92,28 @@ class OLSPairsTradingAlgo:
     
     
     def get_spreads(self, symbol_pair, hedge, prices=None):
-        if symbol_pair in consts.spreads.keys():
-            old_spreads = consts.spreads[symbol_pair]
-            latest_price = self.helper.current_prices(symbol_pair)
-            if old_spreads.tail(1).index.date != latest_price.tail(1).index.date:
-                x_price = latest_price.loc[:, symbol_pair[0]].loc[:, 'close']
-                y_price = latest_price.loc[:, symbol_pair[1]].loc[:, 'close']
-                new_spread = y_price - hedge * x_price
-                new_spreads = old_spreads[1:].append(new_spread)
-                consts.spreads[symbol_pair] = new_spreads
-                return new_spreads
-            else:
-                return old_spreads
-        else:
-            if prices is None:
-                prices = self.helper.prices_up_to_yesterday(symbol_pair, lookback=self.lookback)
-            x_price = prices.loc[:, symbol_pair[0]].loc[:, 'close']
-            y_price = prices.loc[:, symbol_pair[1]].loc[:, 'close']
-            spreads = y_price - hedge * x_price
-            consts.spreads[symbol_pair] = spreads
-            return spreads
+        #TODO:URGENT FIX:SPREAD DATES INCONSISTENCY
+        if prices is None:
+            prices = self.helper.prices_up_to_yesterday(symbol_pair, lookback=self.lookback)
+        x_price = prices.loc[:, symbol_pair[0]].loc[:, 'close']
+        y_price = prices.loc[:, symbol_pair[1]].loc[:, 'close']
+        spreads = y_price - hedge * x_price
+        consts.spreads[symbol_pair] = spreads
+        return spreads
+
+    """ if symbol_pair in consts.spreads.keys():
+                old_spreads = consts.spreads[symbol_pair]
+                latest_price = self.helper.current_prices(symbol_pair)
+                if old_spreads.tail(1).index.date != latest_price.tail(1).index.date:
+                    x_price = latest_price.loc[:, symbol_pair[0]].loc[:, 'close']
+                    y_price = latest_price.loc[:, symbol_pair[1]].loc[:, 'close']
+                    new_spread = y_price - hedge * x_price
+                    new_spreads = old_spreads[1:].append(new_spread)
+                    consts.spreads[symbol_pair] = new_spreads
+                    return new_spreads
+                else:
+                    return old_spreads
+            else:"""
     
     
     # OLS:Y=A+BX
@@ -134,6 +136,7 @@ class OLSPairsTradingAlgo:
     
     def build_orders(self,cash=5000):
         weights, delta, _ = self.get_portfolio_weights()
+        print(_)
         if not delta:
             print("no delta")
             return []
@@ -173,15 +176,17 @@ class OLSPairsTradingAlgo:
                 })
     
         return orders
-    def trade(self, orders):
-        self.helper.trade(orders)
+    def trade(self, orders, wait=0):
+        self.helper.trade(orders, wait)
 
     def set_current_strategy_status(self,data):
         with open(self.status_file_name, 'w+') as outfile:
             json.dump(data, outfile)
-    def initiate_strategy_status(self):
-        if os.path.isfile(self.status_file_name):
-            return
+
+    def initiate_strategy_status(self, checkfile=True):
+        if checkfile:
+            if os.path.isfile(self.status_file_name):
+                return
         status={}
         for pair in self.symbol_pairs:
             query_string = pair[0]+' '+pair[1]

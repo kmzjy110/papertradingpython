@@ -1,6 +1,5 @@
 import csv
 import logging
-import os
 import uuid
 
 class BacktestHelper:
@@ -27,11 +26,11 @@ class BacktestHelper:
         self.backtest_account_filename = "backtest_account.csv"
         self.backtest_account_hist_filename = "backtest_account_hist.csv"
 
-        self.check_files(self.backtest_orders_filename,self.order_columns)
-        self.check_files(self.backtest_positions_filename, self.position_columns)
-        self.check_files(self.backtest_positions_hist_filename, self.position_columns_with_time)
-        self.check_files(self.backtest_account_filename,self.account_columns)
-        self.check_files(self.backtest_account_hist_filename,self.account_columns_with_time)
+        self.init_files(self.backtest_orders_filename, self.order_columns)
+        self.init_files(self.backtest_positions_filename, self.position_columns)
+        self.init_files(self.backtest_positions_hist_filename, self.position_columns_with_time)
+        self.init_files(self.backtest_account_filename, self.account_columns)
+        self.init_files(self.backtest_account_hist_filename, self.account_columns_with_time)
 
         self.initiate_account(initial_cash)
     def initiate_account(self, cash):
@@ -66,15 +65,13 @@ class BacktestHelper:
         self.write_to_csv(self.backtest_account_hist_filename, account, self.account_columns_with_time, 1)
 
 
-    def check_files(self,filename,columns):
-        exists = os.path.isfile(filename)
-        if not exists:
-            try:
-                with open(filename, "w+") as csvfile:
-                    writer = csv.DictWriter(csvfile,fieldnames=columns)
-                    writer.writeheader()
-            except IOError:
-                logging.error("I/O Error:"+filename)
+    def init_files(self, filename, columns):
+        try:
+            with open(filename, "w+") as csvfile:
+                writer = csv.DictWriter(csvfile,fieldnames=columns)
+                writer.writeheader()
+        except IOError:
+            logging.error("I/O Error:"+filename)
 
     def write_to_csv(self, filename, data, fieldnames, numrows):
         try:

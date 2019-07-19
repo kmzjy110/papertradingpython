@@ -50,7 +50,7 @@ class Helper():
                 df_dropped = df.dropna()
                 return df_dropped.tail(1)
             else:
-                return self.prices_up_to_yesterday(symbols, lookback=1).dropna().tail(1)
+                return self.prices_up_to_yesterday(symbols, lookback=5).dropna().tail(1)
         else:
             end = now.isoformat() + 'Z'
             start = (now - pd.Timedelta('20 minutes')).isoformat() + 'Z'
