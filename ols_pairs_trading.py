@@ -8,14 +8,14 @@ import os
 # return stock-weight pairs that sum to one
 #TODO:REFACTOR INTO A CLASS
 class OLSPairsTradingAlgo:
-    def __init__(self, symbol_pairs, symbols,lookback, set_status, status_file_name, api):
+    def __init__(self, symbol_pairs, symbols,lookback, set_status, status_file_name, api, recreate_strategy_file=True):
         self.symbol_pairs = symbol_pairs
         self.lookback = lookback
         self.set_status=set_status
         self.status_file_name = status_file_name
         self.api=api
         self.symbols = symbols
-        self.initiate_strategy_status(checkfile=False)
+        self.initiate_strategy_status(checkfile=not recreate_strategy_file)
 
         self.helper = helper.Helper(self.api,self.symbols,lookback, self.get_current_strategy_status())
 
@@ -140,6 +140,8 @@ class OLSPairsTradingAlgo:
         if not delta:
             print("no delta")
             return []
+        cur_weights = self.helper.get_current_portfolio_weights()
+
         target_num_shares = self.helper.get_share_numbers(cash,
                                                      weights)  # BECAUSE ONLY PASSING IN 5000, TARGET NUMBER OF SHARES MUST BE PROPORTIONAL
         cur_positions = self.helper.get_current_portfolio_positions()
@@ -153,7 +155,7 @@ class OLSPairsTradingAlgo:
     
         for column in order_df.columns:
             rounded = round(order_df.loc[:, column].loc[0])
-            if (rounded == 0) and ( order_df.loc[:, column].loc[0] >= 0.2):
+            if (rounded == 0) and ( order_df.loc[:, column].loc[0] >= 0.4):
                 logging.error("rounded to 0!")
                 raise Exception('rounded to 0!')
             order_df.loc[:, column].loc[0] = rounded

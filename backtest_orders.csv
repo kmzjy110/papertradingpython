@@ -1,2 +1,1 @@
 id,client_order_id,created_at,updated_at,submitted_at,filled_at,expired_at,canceled_at,failed_at,asset_id,symbol,asset_class,qty,filled_qty,filled_avg_price,order_type,type,side,time_in_force,limit_price,stop_price,status
-32f1a1c2-4f48-475b-9493-8716fd3a49c1,feef8a3b-7096-40c3-83d0-0bb4df91a849,2019-05-28T00:00:00Z,2019-05-28T00:00:00Z,2019-05-28T00:00:00Z,2019-05-28T00:00:00Z,,,,b0b6dd9d-8b9b-48a9-ba46-b9d54906e415,AAPL,us_equity,5,5,178.17,market,market,sell,day,,,filled

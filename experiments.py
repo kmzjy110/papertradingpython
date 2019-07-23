@@ -16,8 +16,8 @@ end_day = pd.Timestamp(2019, 7, 16)
 
 
 
-engine = backtestengine.BacktestEngine()
-engine.do_backtest()
+#engine = backtestengine.BacktestEngine()
+#engine.do_backtest()
 
 
 lookback = 20
@@ -42,10 +42,10 @@ experiment_end_day = pd.Timestamp(year=2019, month=7, day=1, tz=NY)
 
 #positions = consts.api.list_positions()
 
-weights, delta, zscores = ols_pairs_trading.get_portfolio_weights(consts.pairs)
+#weights, delta, zscores = ols_pairs_trading.get_portfolio_weights(consts.pairs)
 
-account = consts.api.get_account()
-positions = consts.api.list_positions()
+#account = consts.api.get_account()
+#positions = consts.api.list_positions()
 
 #orders = consts.api.list_orders(status="all",limit=50, after = pd.Timestamp(2019,7,12))
 
@@ -58,20 +58,19 @@ positions = consts.api.list_positions()
 #print(type('NFLX')==str)
 
 
-BacktesterAPI = backtesthelper.BacktestAPI(current_time=current_time, start_date=start_day, end_date=end_day,
-                                           symbols_involved=symbols, alpaca_api=consts.api)
+#BacktesterAPI = backtesthelper.BacktestAPI(current_time=current_time, start_date=start_day, end_date=end_day,
+                                           #symbols_involved=symbols, alpaca_api=consts.api)
 #df = BacktesterAPI.get_barset('NFLX','day',200,start_day,end_day).df
 #orders = BacktesterAPI.list_orders()
 
 
 
-print("a")
+#print("a")
 
 
+algo = ols_pairs_trading.OLSPairsTradingAlgo(consts.pairs, consts.columns, 200, False, "ols_pairs_trading.json",
+                                                     consts.alpaca_api, recreate_strategy_file=False)
+orders = algo.build_orders(5000)
+print(orders)
+algo.trade(orders,30)
 
-positions = BacktesterAPI.list_positions()
-BacktesterAPI.submit_order('NFLX',1,'buy','market','day')
-logging.basicConfig(filename='app.log', level=logging.INFO)
-
-weights, delta = ols_pairs_trading.get_portfolio_weights(consts.pairs, set_status=False)
-print(delta)
