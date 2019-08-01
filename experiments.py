@@ -70,6 +70,7 @@ experiment_end_day = pd.Timestamp(year=2019, month=7, day=1, tz=NY)
 
 algo = ols_pairs_trading.OLSPairsTradingAlgo(consts.pairs, consts.columns, 200, False, "ols_pairs_trading.json",
                                                      consts.alpaca_api, recreate_strategy_file=False)
+weights, delta, zscores = algo.get_portfolio_weights()
 orders = algo.build_orders(5000)
 print(orders)
 algo.trade(orders,30)
