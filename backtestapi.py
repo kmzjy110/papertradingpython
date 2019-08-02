@@ -154,15 +154,15 @@ class BacktestAPI:
             most_recent_price = float(order["filled_avg_price"])
 
             if most_recent_qty == 0:
-                cash_add = (order_qty*float(order["filled_avg_price"]))-float(cur_position["cost_basis"])
+                cash_add = round(-float(cur_position["cost_basis"])-(order_qty*float(order["filled_avg_price"])),2)
                 cur_position["avg_entry_price"] = -cash_add
                 cur_position["unrealized_pl"] = cash_add
-                cur_position["unrealized_plpc"] = cur_position["unrealized_pl"] / float(cur_position["cost_basis"])
+                cur_position["unrealized_plpc"] =round(cur_position["unrealized_pl"] / float(cur_position["cost_basis"]),2)
                 closed_out=True
             else:
-                cur_position["avg_entry_price"] = (order_qty * most_recent_price +
+                cur_position["avg_entry_price"] = round((order_qty * most_recent_price +
                                                   float(cur_position["qty"]) * float(cur_position["avg_entry_price"])) \
-                                                  /most_recent_qty
+                                                  /most_recent_qty,2)
 
             cur_position["qty"] = most_recent_qty
 
@@ -189,7 +189,7 @@ class BacktestAPI:
         cur_position["qty"] = str(int(float(cur_position["qty"])))
         if not closed_out:
             cur_position["unrealized_pl"] = round(cur_position["market_value"] - cur_position["cost_basis"],2)
-            cur_position["unrealized_plpc"] = round(cur_position["unrealized_pl"] / cur_position["cost_basis"],2)
+            cur_position["unrealized_plpc"] = round(cur_position["unrealized_pl"] / abs(cur_position["cost_basis"]),2)
             if float(cur_position["qty"]) < 0:
                 cur_position["side"] = "short"
             else:

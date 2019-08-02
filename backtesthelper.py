@@ -79,6 +79,8 @@ class BacktestHelper:
             with open(filename, "w+") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
+                if not data: #TODO:FIX DATA
+                    return True
                 if numrows==1:
                     writer.writerow(data)
                 else:
@@ -137,7 +139,7 @@ class BacktestHelper:
         positions_raw = self.read_positions_raw()
         for i in range(len(positions_raw)):
             if positions_raw[i]["symbol"] == symbol:
-                positions_raw[i] = None
+                positions_raw.remove(positions_raw[i])
                 break
         return self.write_to_csv(self.backtest_positions_filename, positions_raw, self.position_columns,len(positions_raw))
 
