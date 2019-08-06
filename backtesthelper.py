@@ -4,10 +4,11 @@ import uuid
 
 class BacktestHelper:
 
-    def __init__(self, current_time, start_date, end_date, initial_cash):
+    def __init__(self, current_time, start_date, end_date, initial_cash, timeframe='day'):
         self.start_date = start_date
         self.end_date = end_date
         self.current_time = current_time
+        self.timeframe=timeframe
         self.order_columns = ['id', 'client_order_id', 'created_at', 'updated_at', 'submitted_at', 'filled_at',
                               'expired_at', 'canceled_at', 'failed_at', 'asset_id', 'symbol', 'asset_class', 'qty',
                               'filled_qty', 'filled_avg_price', 'order_type', 'type', 'side', 'time_in_force',
@@ -63,7 +64,7 @@ class BacktestHelper:
 
         self.write_account_data(account)
         account["time"]=self.current_time
-        self.write_to_csv(self.backtest_account_hist_filename, account, self.account_columns_with_time, 1)
+        self.write_to_csv(self.backtest_account_hist_filename, account, self.account_columns_with_time)
 
 
     def init_files(self, filename, columns):
@@ -74,14 +75,14 @@ class BacktestHelper:
         except IOError:
             logging.error("I/O Error:"+filename)
 
-    def write_to_csv(self, filename, data, fieldnames, numrows):
+    def write_to_csv(self, filename, data, fieldnames):
         try:
             with open(filename, "w+") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
                 if not data: #TODO:FIX DATA
                     return True
-                if numrows==1:
+                if type(data) is dict:
                     writer.writerow(data)
                 else:
                     for row in data:
@@ -98,7 +99,7 @@ class BacktestHelper:
             if positions_raw[i]["symbol"] == position_raw["symbol"]:
                 positions_raw[i] = position_raw
                 break
-        return self.write_to_csv(self.backtest_positions_filename,positions_raw, self.position_columns, len(positions_raw))
+        return self.write_to_csv(self.backtest_positions_filename,positions_raw, self.position_columns)
 
 
     def append_to_cur_position(self, position_raw):
@@ -141,11 +142,14 @@ class BacktestHelper:
             if positions_raw[i]["symbol"] == symbol:
                 positions_raw.remove(positions_raw[i])
                 break
-        return self.write_to_csv(self.backtest_positions_filename, positions_raw, self.position_columns,len(positions_raw))
+        return self.write_to_csv(self.backtest_positions_filename, positions_raw, self.position_columns)
 
     def read_account_raw(self):
         return self.read_from_csv(self.backtest_account_filename)[0]
 
+    def update_position(self):
+        
+        pass
     def update_account(self, transaction_cash=0):
         account = self.read_account_raw()
         positions = self.read_positions_raw()

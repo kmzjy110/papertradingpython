@@ -1,2 +1,2 @@
 id,status,currency,buying_power,regt_buying_power,daytrading_buying_power,cash,portfolio_value,pattern_day_trader,trading_blocked,transfers_blocked,account_blocked,created_at,trade_suspended_by_user,multiplier,shorting_enabled,equity,last_equity,long_market_value,short_market_value,initial_margin,maintenance_margin,last_maintenance_margin,sma,daytrade_count
-65ee1857-0977-42a2-aa53-638b3cbad13d,ACTIVE,USD,8328.3,8328.3,0,3662.45,5015.85,False,False,False,False,2019-05-28T00:00:00Z,False,2,True,5015.85,5000.0,1528.4,-175.0,851.7,458.52,458.52,0,0
+00cf0869-9aff-42ab-9f84-69af0fbaf130,ACTIVE,USD,10202.74,10202.74,0,5101.37,5101.37,False,False,False,False,2019-05-28T00:00:00Z,False,2,True,5101.37,5017.57,0,0,0.0,0,458.52,0,0

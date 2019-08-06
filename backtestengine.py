@@ -15,8 +15,7 @@ class BacktestEngine:
         end_day = pd.Timestamp(2019, 7, 16)
         current_time = pd.Timestamp(2019, 5, 28)
         helper = backtesthelper.BacktestHelper(current_time, start_day, end_day, 5000)
-        backtest_api = backtestapi.BacktestAPI(current_time, start_day, end_day, consts.columns, consts.alpaca_api,
-                                               helper)
+        backtest_api = backtestapi.BacktestAPI(current_time, start_day, end_day, consts.columns, consts.alpaca_api,helper)
         algo = ols_pairs_trading.OLSPairsTradingAlgo(consts.pairs, consts.columns, 200, True, "ols_pairs_backtest.json",
                                                      backtest_api)
         orders=[]
