@@ -1,6 +1,1 @@
 time,asset_class,asset_id,avg_entry_price,change_today,cost_basis,current_price,exchange,lastday_price,market_value,qty,side,symbol,unrealized_intraday_pl,unrealized_intraday_plpc,unrealized_pl,unrealized_plpc
-2019-05-28 00:00:00,us_equity,b0b6dd9d-8b9b-48a9-ba46-b9d54906e415,178.17,0,-890.85,178.17,NASDAQ,179.06,-890.85,-5,short,AAPL,0,0,0.0,0.0
-2019-05-29 00:00:00,us_equity,cf80d13f-470c-4947-8593-c5e098aeba4e,152.84,0,1528.4,152.84,NYSE,155.15,1528.4,10,long,CRM,0,0,0.0,0.0
-2019-05-31 00:00:00,us_equity,b0b6dd9d-8b9b-48a9-ba46-b9d54906e415,190.85,0,-190.85,175.0,NASDAQ,178.25,-175.0,-1,short,AAPL,0,0,15.85,0.08
-2019-06-03 00:00:00,us_equity,b0b6dd9d-8b9b-48a9-ba46-b9d54906e415,-17.57,0,-0.0,173.28,NASDAQ,175.0,0.0,0,short,AAPL,0,0,17.57,-0.09
-2019-06-07 00:00:00,us_equity,cf80d13f-470c-4947-8593-c5e098aeba4e,-83.8,0,-0.0,161.22,NYSE,159.37,0.0,0,long,CRM,0,0,83.8,0.05

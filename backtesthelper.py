@@ -4,7 +4,7 @@ import uuid
 
 class BacktestHelper:
 
-    def __init__(self, current_time, start_date, end_date, initial_cash, timeframe='day'):
+    def __init__(self, current_time, start_date, end_date, initial_cash, aggregate_prices, timeframe='day'):
         self.start_date = start_date
         self.end_date = end_date
         self.current_time = current_time
@@ -34,6 +34,9 @@ class BacktestHelper:
         self.init_files(self.backtest_account_hist_filename, self.account_columns_with_time)
 
         self.initiate_account(initial_cash)
+        self.aggregate_prices_df = aggregate_prices.df
+
+
     def initiate_account(self, cash):
         account={}
         account["id"]=str(uuid.uuid4())
@@ -147,9 +150,24 @@ class BacktestHelper:
     def read_account_raw(self):
         return self.read_from_csv(self.backtest_account_filename)[0]
 
-    def update_position(self):
-        
-        pass
+    def update_positions(self): #TODO:TEST
+        positions = self.read_positions_raw()
+        for position in positions:
+            current_price = self.aggregate_prices_df[position["symbol"]].loc[:self.current_time].iloc[-1].loc["close"]
+            position["market_value"] = float(position["qty"])* current_price
+            position["unrealized_pl"] = round(position["market_value"] - position["cost_basis"], 2)
+            position["unrealized_plpc"] = round(position["unrealized_pl"] / abs(position["cost_basis"]), 2) #TODO:SAME CALCULATION AS IN API SUBMIT ORDER, CONSIDER REFACTORING
+            position["lastday_price"]=position["current_price"]
+            position["current_price"]=str(current_price)
+        self.write_to_csv(self.backtest_positions_filename,positions, self.position_columns)
+
+
+
+
+
+
+
+
     def update_account(self, transaction_cash=0):
         account = self.read_account_raw()
         positions = self.read_positions_raw()

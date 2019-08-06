@@ -5,7 +5,7 @@ import uuid
 import csv
 
 class BacktestAPI:
-    def __init__(self, current_time, start_date, end_date, symbols_involved, alpaca_api, backtest_helper,
+    def __init__(self, current_time, start_date, end_date, symbols_involved, alpaca_api, backtest_helper, aggregate_prices, aggregate_assets,
                  max_lookback=consts.lookback, timeframe='day'):
         self.current_time = current_time #TODO:FUTURE consider refactoring current time between helper and api
         self.start_date = start_date
@@ -13,16 +13,9 @@ class BacktestAPI:
         self.symbols_involved = symbols_involved
         self.timeframe = timeframe
         self.backtest_helper = backtest_helper
-        start = ((start_date - pd.Timedelta(str(max_lookback + 3) + ' days')).replace(second=0,
-                                                                                      microsecond=0).isoformat()[
-                 :consts.iso_format_string_adjust]) + 'Z'
-        # subtracted 3 more days to allow lastday price generalized to mondays
-
-        end = (end_date.replace(second=0, microsecond=0).isoformat()[:consts.iso_format_string_adjust]) + 'Z'
-        self.aggregate_prices = alpaca_api.get_barset(symbols_involved, timeframe, limit=1000, start=start, end=end)
-        self.aggregate_assets = {}
-        for symbol in symbols_involved:
-            self.aggregate_assets[symbol] = alpaca_api.get_asset(symbol)
+        self.aggregate_prices = aggregate_prices
+        self.aggregate_prices_df = self.aggregate_prices.df
+        self.aggregate_assets = aggregate_assets
 
 
     def get_clock(self):
@@ -119,7 +112,7 @@ class BacktestAPI:
         order["qty"] = str(qty)
         order["filled_qty"] = str(qty)
         order["filled_avg_price"] = str(
-            self.aggregate_prices.df[symbol].loc[self.current_time].loc['close'])  # maybe try averaging all 4 prices?TODO:Optimize df
+            self.aggregate_prices_df[symbol].loc[:self.current_time].iloc[-1].loc["close"])  # maybe try averaging all 4 prices? TODO:CHECK MARKET CLOSE DAYS
         order["order_type"] = type
         order["type"] = type
         order["side"] = side
@@ -177,7 +170,7 @@ class BacktestAPI:
             cur_position["qty"] = order_qty
 
         cur_position["current_price"] = order["filled_avg_price"]
-        cur_position["lastday_price"] = self.aggregate_prices.df[symbol].loc[:self.current_time]["close"][-2]
+        cur_position["lastday_price"] = self.aggregate_prices_df[symbol].loc[:self.current_time]["close"][-2]
         cur_position["market_value"] = round(float(cur_position["current_price"]) * float(cur_position["qty"]),2)
         cur_position["cost_basis"] = round(float(cur_position["avg_entry_price"]) * float(cur_position["qty"]),2)
 
