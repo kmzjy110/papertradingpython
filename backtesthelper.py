@@ -4,7 +4,7 @@ import uuid
 
 class BacktestHelper:
 
-    def __init__(self, current_time, start_date, end_date, initial_cash, aggregate_prices, timeframe='day'):
+    def __init__(self, current_time, start_date, end_date, initial_cash, aggregate_prices, timeframe='day', init_files=True, backtest_orders_filename="backtest_orders.csv", backtest_positions_filename="backtest_positions.csv",backtest_positions_hist_filename="backtest_positions_hist.csv",backtest_account_filename="backtest_account.csv", backtest_account_hist_filename="backtest_account_hist.csv"):
         self.start_date = start_date
         self.end_date = end_date
         self.current_time = current_time
@@ -21,19 +21,18 @@ class BacktestHelper:
         self.account_columns= ['id', 'status', 'currency', 'buying_power', 'regt_buying_power', 'daytrading_buying_power', 'cash', 'portfolio_value', 'pattern_day_trader', 'trading_blocked', 'transfers_blocked', 'account_blocked', 'created_at', 'trade_suspended_by_user', 'multiplier', 'shorting_enabled', 'equity', 'last_equity', 'long_market_value', 'short_market_value', 'initial_margin', 'maintenance_margin', 'last_maintenance_margin', 'sma', 'daytrade_count']
         self.account_columns_with_time = ['time'] + [c for c in self.account_columns]
         #TODO: ALLOW CUSTOM FILE NAMES
-        self.backtest_orders_filename = "backtest_orders.csv"
-        self.backtest_positions_filename = "backtest_positions.csv"
-        self.backtest_positions_hist_filename = "backtest_positions_hist.csv"
-        self.backtest_account_filename = "backtest_account.csv"
-        self.backtest_account_hist_filename = "backtest_account_hist.csv"
-
-        self.init_files(self.backtest_orders_filename, self.order_columns)
-        self.init_files(self.backtest_positions_filename, self.position_columns)
-        self.init_files(self.backtest_positions_hist_filename, self.position_columns_with_time)
-        self.init_files(self.backtest_account_filename, self.account_columns)
-        self.init_files(self.backtest_account_hist_filename, self.account_columns_with_time)
-
-        self.initiate_account(initial_cash)
+        self.backtest_orders_filename = backtest_orders_filename
+        self.backtest_positions_filename = backtest_positions_filename
+        self.backtest_positions_hist_filename = backtest_positions_hist_filename
+        self.backtest_account_filename = backtest_account_filename
+        self.backtest_account_hist_filename = backtest_account_hist_filename
+        if init_files:
+            self.init_files(self.backtest_orders_filename, self.order_columns)
+            self.init_files(self.backtest_positions_filename, self.position_columns)
+            self.init_files(self.backtest_positions_hist_filename, self.position_columns_with_time)
+            self.init_files(self.backtest_account_filename, self.account_columns)
+            self.init_files(self.backtest_account_hist_filename, self.account_columns_with_time)
+            self.initiate_account(initial_cash)
         self.aggregate_prices_df = aggregate_prices.df
 
 
@@ -112,6 +111,20 @@ class BacktestHelper:
         position_raw["time"] = self.current_time
         return self.append_row_to_csv(self.backtest_positions_hist_filename, position_raw, self.position_columns_with_time)
 
+    def append_to_position_hist_multiple(self,positions):
+
+        try:
+            with open(self.backtest_positions_hist_filename, "a") as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=self.position_columns_with_time)
+                for position in positions:
+                    position["time"] = self.current_time
+                    writer.writerow(position)
+        except IOError:
+            logging.error('I/O Error:' + self.backtest_positions_hist_filename)
+            return False
+        return True
+
+
     def append_row_to_csv(self, filename, raw_data, fieldnames):
         try:
             with open(filename, "a") as csvfile:
@@ -150,16 +163,21 @@ class BacktestHelper:
     def read_account_raw(self):
         return self.read_from_csv(self.backtest_account_filename)[0]
 
-    def update_positions(self): #TODO:TEST
+    def update_positions(self):
         positions = self.read_positions_raw()
         for position in positions:
             current_price = self.aggregate_prices_df[position["symbol"]].loc[:self.current_time].iloc[-1].loc["close"]
+            position["cost_basis"]=float(position["cost_basis"])
+            position["unrealized_pl"]=float(position["unrealized_pl"])
             position["market_value"] = float(position["qty"])* current_price
-            position["unrealized_pl"] = round(position["market_value"] - position["cost_basis"], 2)
-            position["unrealized_plpc"] = round(position["unrealized_pl"] / abs(position["cost_basis"]), 2) #TODO:SAME CALCULATION AS IN API SUBMIT ORDER, CONSIDER REFACTORING
+            position["unrealized_pl"] = round(position["market_value"] -position["cost_basis"], 2)
+            position["unrealized_plpc"] = round(position["unrealized_pl"] / abs(position["cost_basis"]), 5) #TODO:SAME CALCULATION AS IN API SUBMIT ORDER, CONSIDER REFACTORING
             position["lastday_price"]=position["current_price"]
             position["current_price"]=str(current_price)
-        self.write_to_csv(self.backtest_positions_filename,positions, self.position_columns)
+        self.write_to_csv(self.backtest_positions_filename, positions, self.position_columns)
+        self.append_to_position_hist_multiple(positions)
+
+
 
 
 

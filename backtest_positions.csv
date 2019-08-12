@@ -1,1 +1,9 @@
 asset_class,asset_id,avg_entry_price,change_today,cost_basis,current_price,exchange,lastday_price,market_value,qty,side,symbol,unrealized_intraday_pl,unrealized_intraday_plpc,unrealized_pl,unrealized_plpc
+us_equity,21d40833-6d13-4031-9af3-02f6a516d791,135.92,0,-679.6,143.31,NYSE,143.31,-716.55,-5,short,IBM,0,0,-36.95,-0.05437
+us_equity,cf80d13f-470c-4947-8593-c5e098aeba4e,150.05,0,600.2,159.65,NYSE,159.65,638.6,4,long,CRM,0,0,38.4,0.06398
+us_equity,1d27e066-67b9-4e11-b3a9-a6b50ca524e1,27.78,0,-916.74,29.81,NASDAQ,29.81,-983.7299999999999,-33,short,DISCK,0,0,-66.99,-0.07307
+us_equity,bb2a26c0-4c77-4801-8afc-82e8142ac7b8,343.57,0,343.57,366.62,NASDAQ,366.62,366.62,1,long,NFLX,0,0,23.05,0.06709
+us_equity,3f3e0ff9-599f-4fec-8842-6bc53f5129a1,109.07,0,-763.49,114.98,NYSE,114.98,-804.86,-7,short,WMT,0,0,-41.37,-0.05419
+us_equity,2edb3ef9-b5d8-4667-be8f-334884498ac9,135.64,0,542.56,142.27,NYSE,142.27,569.08,4,long,DG,0,0,26.52,0.04888
+us_equity,440efabf-b53c-4d70-b6e5-abb4f53e7104,118.31,0,-709.86,119.84,NASDAQ,119.84,-719.04,-6,short,TXN,0,0,-9.18,-0.01293
+us_equity,b0b6dd9d-8b9b-48a9-ba46-b9d54906e415,203.24,0,406.48,205.2,NASDAQ,205.2,410.4,2,long,AAPL,0,0,3.92,0.00964

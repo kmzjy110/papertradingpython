@@ -83,6 +83,7 @@ class BacktestAPI:
     def list_orders(self):
         # TODO: list orders between certain times
         orders = []
+        return orders
         with open("backtest_orders.csv", mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
@@ -150,7 +151,7 @@ class BacktestAPI:
                 cash_add = round(-float(cur_position["cost_basis"])-(order_qty*float(order["filled_avg_price"])),2)
                 cur_position["avg_entry_price"] = -cash_add
                 cur_position["unrealized_pl"] = cash_add
-                cur_position["unrealized_plpc"] =round(cur_position["unrealized_pl"] / float(cur_position["cost_basis"]),2)
+                cur_position["unrealized_plpc"] =round(cur_position["unrealized_pl"] / abs(float(cur_position["cost_basis"])),5)
                 closed_out=True
             else:
                 cur_position["avg_entry_price"] = round((order_qty * most_recent_price +
@@ -182,7 +183,7 @@ class BacktestAPI:
         cur_position["qty"] = str(int(float(cur_position["qty"])))
         if not closed_out:
             cur_position["unrealized_pl"] = round(cur_position["market_value"] - cur_position["cost_basis"],2)
-            cur_position["unrealized_plpc"] = round(cur_position["unrealized_pl"] / abs(cur_position["cost_basis"]),2)
+            cur_position["unrealized_plpc"] = round(cur_position["unrealized_pl"] / abs(cur_position["cost_basis"]),5)
             if float(cur_position["qty"]) < 0:
                 cur_position["side"] = "short"
             else:

@@ -8,6 +8,7 @@ import os
 # return stock-weight pairs that sum to one
 #TODO:REFACTOR INTO A CLASS
 class OLSPairsTradingAlgo:
+
     def __init__(self, symbol_pairs, symbols,lookback, set_status, status_file_name, api, recreate_strategy_file=True):
         self.symbol_pairs = symbol_pairs
         self.lookback = lookback
@@ -20,7 +21,7 @@ class OLSPairsTradingAlgo:
         self.helper = helper.Helper(self.api,self.symbols,lookback, self.get_current_strategy_status())
 
 
-    def get_portfolio_weights(self):
+    def get_portfolio_weights(self): #TODO:CONSIDER REFINING STRATEGY REGARDING SHORTING AND LONGING AND BETA (ONLY SHORT if BETA >1?)
         target_weights = self.helper.get_current_portfolio_weights()
         delta = False
         current_zscores = {}
