@@ -17,7 +17,7 @@ end_day = pd.Timestamp(2019, 7, 16)
 
 
 engine = backtestengine.BacktestEngine()
-engine.do_backtest()
+engine.analyze_backtest()
 
 """
 lookback = 20

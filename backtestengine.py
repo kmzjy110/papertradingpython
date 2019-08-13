@@ -5,6 +5,7 @@ import pandas as pd
 import alpaca_trade_api as alpaca_api
 import backtesthelper
 import numpy as np
+import matplotlib.pyplot as plt
 class BacktestEngine:
     #for running the
     def __init__(self):
@@ -24,7 +25,14 @@ class BacktestEngine:
         self.helper=None
         self.backtest_api=None
         self.algo=None
+        max_lookback = consts.lookback
+        start = (self.start_date.replace(second=0,
+                                                                                           microsecond=0).isoformat()[
+                 :consts.iso_format_string_adjust]) + 'Z'
+        # subtracted 3 more days to allow lastday price generalized to mondays
 
+        end = ((self.end_date+pd.Timedelta("1 day")).replace(second=0, microsecond=0).isoformat()[:consts.iso_format_string_adjust]) + 'Z'
+        self.spy_prices = aggregate_prices = consts.alpaca_api.get_barset('SPY', self.timeframe, limit=1000, start=start,end=end).df
 
 
 
@@ -43,6 +51,7 @@ class BacktestEngine:
 
         aggregate_prices = consts.alpaca_api.get_barset(symbols_involved, self.timeframe, limit=1000, start=start,
                                                         end=end)
+
         aggregate_assets = {}
         for symbol in symbols_involved:
             aggregate_assets[symbol] = consts.alpaca_api.get_asset(symbol)
@@ -75,21 +84,53 @@ class BacktestEngine:
         account_data=pd.read_csv(self.backtest_account_hist_filename, parse_dates=parse_dates)
         account_data.set_index('time',inplace=True)
         account_data=account_data.resample('D').last()
-        mult_returns = account_data.portfolio_value.pct_change()[1:]
-        cum_returns = np.cumprod(1+mult_returns.values)-1
+        self.calculate_beta(account_data)
 
+        orders_parsed_dates = ['submitted_at']
+        orders = pd.read_csv(self.backtest_orders_filename, parse_dates=orders_parsed_dates)
+        orders.set_index('submitted_at', inplace=True)
         print('a')
-    #logical sequence of events:
-    #for loop
-    #algo trade
-    #keep account history
+
+
+    def calculate_turnover_rate(self, orders, account_data):
+        pass
+
+
+
+    def calculate_beta(self, account_data):
+        mult_returns = account_data.portfolio_value.pct_change()[1:]
+        mult_returns.index = mult_returns.index.tz_localize('America/New_York')
+
+
+        spy_close = self.spy_prices.loc[:, 'SPY'].loc[:, 'close']
+        spy_mult_returns = spy_close.pct_change()[1:]
+        spy_mult_returns = spy_mult_returns.resample('D').last()
+        joined_vals = pd.concat([mult_returns, spy_mult_returns], axis=1).dropna()
+
+        mult_returns = joined_vals.loc[:, 'portfolio_value']
+        spy_mult_returns = joined_vals.loc[:, 'close']
+
+        covs = joined_vals.rolling(30).cov().reset_index().set_index('time')
+        covs = covs.loc[(covs.level_1 == 'portfolio_value')][29:].loc[:, 'close']
+        spy_vars = spy_mult_returns.rolling(30).var()[29:]
+        rolling_betas = covs / spy_vars
+        plt.plot(rolling_betas)
+        plt.show()
+
+        norm_returns = account_data.portfolio_value/self.cash
+        spy_norm_returns = spy_close/spy_close[0]
+        plt.plot(norm_returns)
+        plt.plot(spy_norm_returns)
+        plt.legend(["portfolio value", "spy"])
+        plt.show()
+
 
 
 
 
     #calc beta to SPY (6 month rolling beta)
     #calc sector exposure (rolling 63 day avg) TODO FEATURE
-    #calc style exposure
+    #calc style exposure TODO FEATURE
     #calc rolling turnover rate (63day avg)
     #calc position concentration (The percentage of the algorithm's portfolio invested in its most-concentrated asset)
     #calc net dollar exposure (End-of-day net dollar exposure. A measure of the difference between the algorithm's long positions and short positions.)
