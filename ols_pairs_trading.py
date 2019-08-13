@@ -141,7 +141,7 @@ class OLSPairsTradingAlgo:
         if not delta:
             print("no delta")
             return []
-        cur_weights = self.helper.get_current_portfolio_weights()
+        #cur_weights = self.helper.get_current_portfolio_weights()
 
         target_num_shares = self.helper.get_share_numbers(cash,
                                                      weights)  # BECAUSE ONLY PASSING IN 5000, TARGET NUMBER OF SHARES MUST BE PROPORTIONAL
@@ -156,9 +156,10 @@ class OLSPairsTradingAlgo:
     
         for column in order_df.columns:
             rounded = round(order_df.loc[:, column].loc[0])
-            if (rounded == 0) and ( order_df.loc[:, column].loc[0] >= 0.4):
-                logging.error("rounded to 0!")
-                raise Exception('rounded to 0!')
+            if 0.4 <= order_df.loc[:, column].loc[0] <= 0.5:
+                rounded=1
+            elif -0.5 <= order_df.loc[:, column].loc[0] <= -0.4:
+                rounded = -1
             order_df.loc[:, column].loc[0] = rounded
     
         for column in order_df.columns:

@@ -8,10 +8,10 @@ import numpy as np
 class BacktestEngine:
     #for running the
     def __init__(self):
-        self.start_date = pd.Timestamp(2019, 5, 18)
+        self.start_date = pd.Timestamp(2019, 1, 1)
         self.end_date = pd.Timestamp(2019, 7, 16)
         # current_time = pd.Timestamp(2019, 5, 28)
-        self.current_time = pd.Timestamp(2019, 5, 28)
+        self.current_time = pd.Timestamp(2019, 1, 1)
         self.timeframe = 'day'
         self.cash=5000
 
@@ -21,33 +21,49 @@ class BacktestEngine:
         self.backtest_account_filename = "backtest_account.csv"
         self.backtest_account_hist_filename = "backtest_account_hist.csv"
 
+        self.helper=None
+        self.backtest_api=None
+        self.algo=None
 
 
 
+
+
+
+        pass
+    def do_backtest(self):
         symbols_involved = consts.columns
         max_lookback = consts.lookback
         start = ((self.start_date - pd.Timedelta(str(max_lookback + 3) + ' days')).replace(second=0,
-                                                                                      microsecond=0).isoformat()[
+                                                                                           microsecond=0).isoformat()[
                  :consts.iso_format_string_adjust]) + 'Z'
         # subtracted 3 more days to allow lastday price generalized to mondays
 
         end = (self.end_date.replace(second=0, microsecond=0).isoformat()[:consts.iso_format_string_adjust]) + 'Z'
-        aggregate_prices = consts.alpaca_api.get_barset(symbols_involved, self.timeframe, limit=1000, start=start, end=end)
+
+        aggregate_prices = consts.alpaca_api.get_barset(symbols_involved, self.timeframe, limit=1000, start=start,
+                                                        end=end)
         aggregate_assets = {}
         for symbol in symbols_involved:
             aggregate_assets[symbol] = consts.alpaca_api.get_asset(symbol)
 
-
-
-
-        self.helper = backtesthelper.BacktestHelper(self.current_time, self.start_date, self.end_date, 5000, aggregate_prices, timeframe='day', init_files=False,backtest_orders_filename=self.backtest_orders_filename, backtest_positions_filename=self.backtest_positions_filename,backtest_positions_hist_filename=self.backtest_positions_hist_filename,backtest_account_filename=self.backtest_account_filename, backtest_account_hist_filename=self.backtest_account_hist_filename)
+        self.helper = backtesthelper.BacktestHelper(self.current_time, self.start_date, self.end_date, 5000,
+                                                    aggregate_prices, timeframe='day', init_files=False,
+                                                    backtest_orders_filename=self.backtest_orders_filename,
+                                                    backtest_positions_filename=self.backtest_positions_filename,
+                                                    backtest_positions_hist_filename=self.backtest_positions_hist_filename,
+                                                    backtest_account_filename=self.backtest_account_filename,
+                                                    backtest_account_hist_filename=self.backtest_account_hist_filename)
         self.backtest_api = backtestapi.BacktestAPI(self.current_time, self.start_date, self.end_date, symbols_involved,
-                                                    consts.alpaca_api, self.helper, aggregate_prices, aggregate_assets, timeframe=self.timeframe)
+                                                    consts.alpaca_api, self.helper, aggregate_prices, aggregate_assets,
+                                                    timeframe=self.timeframe)
 
-        self.algo = ols_pairs_trading.OLSPairsTradingAlgo(consts.pairs, consts.columns, 200, set_status=True, status_file_name="ols_pairs_backtest.json",
-                                                     api=self.backtest_api, recreate_strategy_file=True)
-        pass
-    def do_backtest(self):
+        self.algo = ols_pairs_trading.OLSPairsTradingAlgo(consts.pairs, consts.columns, 200, set_status=False,
+                                                          status_file_name="ols_pairs_backtest.json",
+                                                          api=self.backtest_api, recreate_strategy_file=False)
+
+
+
         while self.current_time!=self.end_date:
             print(self.current_time)
             orders=self.algo.build_orders(self.cash)

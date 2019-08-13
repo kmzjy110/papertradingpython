@@ -20,7 +20,6 @@ class BacktestHelper:
         self.position_columns_with_time = ['time'] + [c for c in self.position_columns]
         self.account_columns= ['id', 'status', 'currency', 'buying_power', 'regt_buying_power', 'daytrading_buying_power', 'cash', 'portfolio_value', 'pattern_day_trader', 'trading_blocked', 'transfers_blocked', 'account_blocked', 'created_at', 'trade_suspended_by_user', 'multiplier', 'shorting_enabled', 'equity', 'last_equity', 'long_market_value', 'short_market_value', 'initial_margin', 'maintenance_margin', 'last_maintenance_margin', 'sma', 'daytrade_count']
         self.account_columns_with_time = ['time'] + [c for c in self.account_columns]
-        #TODO: ALLOW CUSTOM FILE NAMES
         self.backtest_orders_filename = backtest_orders_filename
         self.backtest_positions_filename = backtest_positions_filename
         self.backtest_positions_hist_filename = backtest_positions_hist_filename
