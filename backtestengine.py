@@ -89,11 +89,41 @@ class BacktestEngine:
         orders_parsed_dates = ['submitted_at']
         orders = pd.read_csv(self.backtest_orders_filename, parse_dates=orders_parsed_dates)
         orders.set_index('submitted_at', inplace=True)
+        self.calculate_turnover_rate(orders,account_data,30)
         print('a')
 
 
-    def calculate_turnover_rate(self, orders, account_data):
-        pass
+    def calculate_turnover_rate(self, orders, account_data, rolling_window):
+        prev_date = self.start_date
+        current_date = self.start_date+pd.Timedelta(str(rolling_window)+"days")
+        turnover_rates=pd.DataFrame()
+        while current_date<=self.end_date:
+            print(current_date)
+            account_data_range = account_data[prev_date:current_date]
+            avg_value = (account_data_range.iloc[0].portfolio_value+ account_data_range.iloc[-1].portfolio_value)/2
+            cur_orders = orders[prev_date:current_date]
+            buys=0
+            sells=0
+            turnover=0
+            for i in range(len(cur_orders)):
+                order = cur_orders.iloc[i]
+                if order.side=='sell':
+                    sells+=order.filled_qty*order.filled_avg_price
+                else:
+                    buys+=order.filled_qty*order.filled_avg_price
+            if buys<sells:
+                turnover=buys/avg_value
+            else:
+                turnover=sells/avg_value
+            turnover_rates=turnover_rates.append({'date':current_date,'turnover':turnover},ignore_index=True)
+            print(turnover)
+            current_date=current_date+pd.Timedelta("1 day")
+            prev_date=prev_date+pd.Timedelta("1 day")
+        turnover_rates.set_index('date',inplace=True)
+        plt.plot(turnover_rates)
+        plt.legend(['rolling turnover rates'])
+        plt.show()
+        return turnover_rates
 
 
 
