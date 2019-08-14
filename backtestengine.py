@@ -95,7 +95,41 @@ class BacktestEngine:
 
         # self.calc_returns(account_data)
         # self.calc_max_drawdown(account_data)
-        self.calc_volatility(account_data, 30)
+        #self.calc_volatility(account_data, 30)
+        self.calc_sharpe_ratio(account_data, 60)
+        print('a')
+
+    def calc_sharpe_ratio(self, account_data, rolling_window):
+        account_data = account_data.portfolio_value
+        account_data.index = account_data.index.tz_localize('America/New_York') #TODO:MOVE LOCALIZE
+        spy_close = self.spy_prices.loc[:, 'SPY'].loc[:, 'close']
+
+        joined_vals = pd.concat([account_data, spy_close], axis=1).dropna()
+        account_data = joined_vals.loc[:, 'portfolio_value']
+        rolling_returns = account_data.rolling(2).apply(lambda x: (x[1]-x[0])/x[0])
+        rf = 0.025/365
+
+
+        rolling_mean = rolling_returns.rolling(30).mean()[30:]
+
+        rolling_std = rolling_returns.rolling(30).std()[30:]
+
+        sharpe = (rolling_mean - rf) /rolling_std
+        plt.plot(sharpe)
+
+
+
+        spy_data = joined_vals.loc[:, 'close']
+
+        spy_rolling_returns = spy_data.rolling(2).apply(lambda x: (x[1]-x[0])/x[0])
+
+        spy_rolling_mean = spy_rolling_returns.rolling(30).mean()[30:]
+
+        spy_rolling_std = spy_rolling_returns.rolling(30).std()[30:]
+        spy_sharpe = (spy_rolling_mean-rf)/spy_rolling_std
+        plt.plot(spy_sharpe)
+        plt.legend(['portfolio rolling ' + str(rolling_window) + ' day sharpe','spy sharpe'])
+        plt.show()
         print('a')
 
     def calc_volatility(self, account_data, rolling_window):
