@@ -1,20 +1,21 @@
-import ols_pairs_trading
-import consts
-import backtestapi
-import pandas as pd
-import alpaca_trade_api as alpaca_api
-import backtesthelper
-import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
+
+import backtestapi
+import backtesthelper
+import consts
+import ols_pairs_trading
+
+
 class BacktestEngine:
-    #for running the
+    # for running the
     def __init__(self):
         self.start_date = pd.Timestamp(2019, 1, 1)
         self.end_date = pd.Timestamp(2019, 7, 16)
         # current_time = pd.Timestamp(2019, 5, 28)
         self.current_time = pd.Timestamp(2019, 1, 1)
         self.timeframe = 'day'
-        self.cash=5000
+        self.cash = 5000
 
         self.backtest_orders_filename = "backtest_orders.csv"
         self.backtest_positions_filename = "backtest_positions.csv"
@@ -22,23 +23,19 @@ class BacktestEngine:
         self.backtest_account_filename = "backtest_account.csv"
         self.backtest_account_hist_filename = "backtest_account_hist.csv"
 
-        self.helper=None
-        self.backtest_api=None
-        self.algo=None
+        self.helper = None
+        self.backtest_api = None
+        self.algo = None
         max_lookback = consts.lookback
         start = (self.start_date.replace(second=0,
-                                                                                           microsecond=0).isoformat()[
+                                         microsecond=0).isoformat()[
                  :consts.iso_format_string_adjust]) + 'Z'
         # subtracted 3 more days to allow lastday price generalized to mondays
 
-        end = ((self.end_date+pd.Timedelta("1 day")).replace(second=0, microsecond=0).isoformat()[:consts.iso_format_string_adjust]) + 'Z'
-        self.spy_prices = aggregate_prices = consts.alpaca_api.get_barset('SPY', self.timeframe, limit=1000, start=start,end=end).df
+        end = ((self.end_date + pd.Timedelta("1 day")).replace(second=0, microsecond=0).isoformat()[
+               :consts.iso_format_string_adjust]) + 'Z'
+        self.spy_prices = consts.alpaca_api.get_barset('SPY', self.timeframe, limit=1000, start=start, end=end).df
 
-
-
-
-
-        pass
     def do_backtest(self):
         symbols_involved = consts.columns
         max_lookback = consts.lookback
@@ -71,73 +68,170 @@ class BacktestEngine:
                                                           status_file_name="ols_pairs_backtest.json",
                                                           api=self.backtest_api, recreate_strategy_file=False)
 
-
-
-        while self.current_time!=self.end_date:
+        while self.current_time != self.end_date:
             print(self.current_time)
-            orders=self.algo.build_orders(self.cash)
+            orders = self.algo.build_orders(self.cash)
             self.algo.trade(orders)
             self.increment_time_and_update()
 
     def analyze_backtest(self):
-        parse_dates=['time']
-        account_data=pd.read_csv(self.backtest_account_hist_filename, parse_dates=parse_dates)
-        account_data.set_index('time',inplace=True)
-        account_data=account_data.resample('D').last()
-        self.calculate_beta(account_data)
+        parse_dates = ['time']
+        account_data = pd.read_csv(self.backtest_account_hist_filename, parse_dates=parse_dates)
+        account_data.set_index('time', inplace=True)
+        account_data = account_data.resample('D').last()
 
         orders_parsed_dates = ['submitted_at']
         orders = pd.read_csv(self.backtest_orders_filename, parse_dates=orders_parsed_dates)
         orders.set_index('submitted_at', inplace=True)
-        self.calculate_turnover_rate(orders,account_data,30)
+
+        positions = pd.read_csv(self.backtest_positions_hist_filename, parse_dates=parse_dates)
+
+        positions.set_index('time', inplace=True)
+        # self.calculate_beta(account_data)
+        # self.calculate_turnover_rate(orders,account_data,30)
+        # self.calc_position_concentration(positions,account_data)
+
+        # self.calc_net_dollar_exposure(account_data)
+
+        # self.calc_returns(account_data)
+        # self.calc_max_drawdown(account_data)
+        self.calc_volatility(account_data, 30)
         print('a')
 
+    def calc_volatility(self, account_data, rolling_window):
+        account_data = account_data.portfolio_value
+        account_data.index = account_data.index.tz_localize('America/New_York')
+
+        spy_close = self.spy_prices.loc[:, 'SPY'].loc[:, 'close']
+
+        joined_vals = pd.concat([account_data, spy_close], axis=1).dropna()
+        account_data = joined_vals.loc[:, 'portfolio_value']
+        spy_close = joined_vals.loc[:, 'close']
+        std = account_data.rolling(rolling_window).std()
+        spy_std = spy_close.rolling(rolling_window).std()
+        std = std / self.cash
+        spy_std = spy_std / spy_close[0]
+        plt.plot(std)
+        plt.plot(spy_std)
+        plt.legend(['portfolio rolling ' + str(rolling_window) + ' day volatility', 'spy_std'])
+        plt.show()
+        return std
+
+    def calc_max_drawdown(self, account_data):
+        cum_returns = account_data.portfolio_value.diff()[1:].cumsum()
+
+        cum_returns.index = cum_returns.index.tz_localize('America/New_York')
+        current_date = self.start_date + pd.Timedelta("1 day")
+        prev_high = 0
+        spy_prev_high = 0
+        drawdowns = pd.DataFrame()
+        spy_drawdowns = pd.DataFrame()
+
+        spy_close = self.spy_prices.loc[:, 'SPY'].loc[:, 'close']
+        spy_cum_returns = spy_close.diff()[1:].cumsum()
+
+        joined_vals = pd.concat([cum_returns, spy_cum_returns], axis=1).fillna(method='ffill')
+
+        cum_returns = joined_vals.loc[:, 'portfolio_value']
+        spy_cum_returns = joined_vals.loc[:, 'close']
+        while current_date <= self.end_date:
+            cur_cum_return = cum_returns[current_date:current_date][0]
+            prev_high = max(prev_high, cur_cum_return)
+            dd = cur_cum_return - prev_high
+            drawdowns.loc[current_date, 'Drawdown'] = dd if dd < 0 else 0
+
+            cur_spy_cum_return = spy_cum_returns[current_date:current_date][0]
+            spy_prev_high = max(spy_prev_high, cur_spy_cum_return)
+            spy_dd = cur_spy_cum_return - spy_prev_high
+            spy_drawdowns.loc[current_date, 'Drawdown'] = spy_dd if spy_dd < 0 else 0
+
+            current_date = current_date + pd.Timedelta("1 day")
+        drawdowns = drawdowns / self.cash
+        spy_drawdowns = spy_drawdowns / spy_close[0]
+        plt.plot(drawdowns)
+        plt.plot(spy_drawdowns)
+        plt.legend(['drawdowns', 'spy_drawdowns'])
+        plt.show()
+
+    def calc_net_dollar_exposure(self, account_data):
+        current_date = self.start_date
+        net_dollar_exposure_df = pd.DataFrame()
+        while current_date <= self.end_date:
+            cur_account = account_data[current_date:current_date]
+            exposure = cur_account.long_market_value - abs(cur_account.short_market_value)
+            net_dollar_exposure_df = net_dollar_exposure_df.append(
+                {'date': current_date, 'exposure': exposure}, ignore_index=True)
+            current_date = current_date + pd.Timedelta("1 day")
+        net_dollar_exposure_df.set_index('date', inplace=True)
+        plt.plot(net_dollar_exposure_df)
+        plt.legend(['net dollar exposure'])
+        plt.show()
+        return net_dollar_exposure_df
+
+    def calc_position_concentration(self, positions, account_data):
+        current_date = self.start_date
+        position_concentration_df = pd.DataFrame()
+        while current_date <= self.end_date:
+            cur_pos = positions[current_date:current_date]
+            cur_account = account_data[current_date:current_date]
+            concentration = max(cur_pos.market_value) / cur_account.portfolio_value
+            position_concentration_df = position_concentration_df.append(
+                {'date': current_date, 'concentration': concentration}, ignore_index=True)
+            current_date = current_date + pd.Timedelta("1 day")
+        position_concentration_df.set_index('date', inplace=True)
+        plt.plot(position_concentration_df)
+        plt.legend(['max position concentrations'])
+        plt.show()
+        return position_concentration_df
 
     def calculate_turnover_rate(self, orders, account_data, rolling_window):
         prev_date = self.start_date
-        current_date = self.start_date+pd.Timedelta(str(rolling_window)+"days")
-        turnover_rates=pd.DataFrame()
-        while current_date<=self.end_date:
-            print(current_date)
+        current_date = self.start_date + pd.Timedelta(str(rolling_window) + "days")
+        turnover_rates = pd.DataFrame()
+        while current_date <= self.end_date:
             account_data_range = account_data[prev_date:current_date]
-            avg_value = (account_data_range.iloc[0].portfolio_value+ account_data_range.iloc[-1].portfolio_value)/2
+            avg_value = (account_data_range.iloc[0].portfolio_value + account_data_range.iloc[-1].portfolio_value) / 2
             cur_orders = orders[prev_date:current_date]
-            buys=0
-            sells=0
-            turnover=0
+            buys = 0
+            sells = 0
+            turnover = 0
             for i in range(len(cur_orders)):
                 order = cur_orders.iloc[i]
-                if order.side=='sell':
-                    sells+=order.filled_qty*order.filled_avg_price
+                if order.side == 'sell':
+                    sells += order.filled_qty * order.filled_avg_price
                 else:
-                    buys+=order.filled_qty*order.filled_avg_price
-            if buys<sells:
-                turnover=buys/avg_value
+                    buys += order.filled_qty * order.filled_avg_price
+            if buys < sells:
+                turnover = buys / avg_value
             else:
-                turnover=sells/avg_value
-            turnover_rates=turnover_rates.append({'date':current_date,'turnover':turnover},ignore_index=True)
-            print(turnover)
-            current_date=current_date+pd.Timedelta("1 day")
-            prev_date=prev_date+pd.Timedelta("1 day")
-        turnover_rates.set_index('date',inplace=True)
+                turnover = sells / avg_value
+            turnover_rates = turnover_rates.append({'date': current_date, 'turnover': turnover}, ignore_index=True)
+            current_date = current_date + pd.Timedelta("1 day")
+            prev_date = prev_date + pd.Timedelta("1 day")
+        turnover_rates.set_index('date', inplace=True)
         plt.plot(turnover_rates)
-        plt.legend(['rolling turnover rates'])
+        plt.legend(['portfolio rolling ' + str(rolling_window) + ' day turnover rates'])
         plt.show()
         return turnover_rates
 
-
+    def calc_returns(self, account_data):
+        spy_close = self.spy_prices.loc[:, 'SPY'].loc[:, 'close']
+        norm_returns = account_data.portfolio_value / self.cash
+        spy_norm_returns = spy_close / spy_close[0]
+        plt.plot(norm_returns)
+        plt.plot(spy_norm_returns)
+        plt.legend(["portfolio value", "spy"])
+        plt.show()
 
     def calculate_beta(self, account_data):
         mult_returns = account_data.portfolio_value.pct_change()[1:]
         mult_returns.index = mult_returns.index.tz_localize('America/New_York')
-
 
         spy_close = self.spy_prices.loc[:, 'SPY'].loc[:, 'close']
         spy_mult_returns = spy_close.pct_change()[1:]
         spy_mult_returns = spy_mult_returns.resample('D').last()
         joined_vals = pd.concat([mult_returns, spy_mult_returns], axis=1).dropna()
 
-        mult_returns = joined_vals.loc[:, 'portfolio_value']
         spy_mult_returns = joined_vals.loc[:, 'close']
 
         covs = joined_vals.rolling(30).cov().reset_index().set_index('time')
@@ -145,49 +239,28 @@ class BacktestEngine:
         spy_vars = spy_mult_returns.rolling(30).var()[29:]
         rolling_betas = covs / spy_vars
         plt.plot(rolling_betas)
+        plt.legend(['account beta'])
         plt.show()
 
-        norm_returns = account_data.portfolio_value/self.cash
-        spy_norm_returns = spy_close/spy_close[0]
-        plt.plot(norm_returns)
-        plt.plot(spy_norm_returns)
-        plt.legend(["portfolio value", "spy"])
-        plt.show()
-
-
-
-
-
-    #calc beta to SPY (6 month rolling beta)
-    #calc sector exposure (rolling 63 day avg) TODO FEATURE
-    #calc style exposure TODO FEATURE
-    #calc rolling turnover rate (63day avg)
-    #calc position concentration (The percentage of the algorithm's portfolio invested in its most-concentrated asset)
-    #calc net dollar exposure (End-of-day net dollar exposure. A measure of the difference between the algorithm's long positions and short positions.)
-
-    # calc return
-    # common return vs specific return (hard to find data)
-    #sharpe (6-month rolling)
-    # calc max draw-down (The largest peak-to-trough drop in the portfolio's history.)
-    #calc volatility (std of portfolio's returns)
-
+    # calc sector exposure (rolling 63 day avg) TODO FEATURE
+    # calc style exposure TODO FEATURE
 
     def test(self):
 
-        orders=[]
+        orders = []
         orders.append({
-            'symbol':'AAPL',
-            'qty':5,
-            'side':'sell'
+            'symbol': 'AAPL',
+            'qty': 5,
+            'side': 'sell'
         })
         orders.append({
-            'symbol':'CRM',
+            'symbol': 'CRM',
             'qty': 10,
-            'side':'buy'
+            'side': 'buy'
         })
         orders.append({
-            'symbol':'AAPL',
-            'qty':4,
+            'symbol': 'AAPL',
+            'qty': 4,
             'side': 'buy'
         })
         orders.append({
@@ -200,7 +273,7 @@ class BacktestEngine:
             'qty': 10,
             'side': 'sell'
         })
-        i=0
+        i = 0
         self.backtest_api.submit_order(
             symbol=orders[i]['symbol'],
             qty=orders[i]['qty'],
@@ -223,8 +296,8 @@ class BacktestEngine:
             )"""
 
     def increment_time_and_update(self):
-        self.current_time = self.current_time+ pd.Timedelta("1 " + self.timeframe)
-        self.helper.current_time=self.current_time
+        self.current_time = self.current_time + pd.Timedelta("1 " + self.timeframe)
+        self.helper.current_time = self.current_time
         self.backtest_api.current_time = self.current_time
         self.helper.update_positions()
-        self.helper.update_account(0)
+        self.helper.update_account(0)  # TODO:implement interest on short trades
