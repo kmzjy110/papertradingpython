@@ -15,9 +15,10 @@ start_day = pd.Timestamp(2019, 5, 18, 9, 30)
 end_day = pd.Timestamp(2019, 7, 16)
 
 
-
+"""
 engine = backtestengine.BacktestEngine()
 engine.analyze_backtest()
+"""
 
 """
 lookback = 20
@@ -69,11 +70,11 @@ experiment_end_day = pd.Timestamp(year=2019, month=7, day=1, tz=NY)
 #print("a")
 
 
-"""algo = ols_pairs_trading.OLSPairsTradingAlgo(consts.pairs, consts.columns, 200, set_status=True, status_file_name="ols_pairs_trading.json",
+algo = ols_pairs_trading.OLSPairsTradingAlgo(consts.pairs, consts.columns, 200, set_status=False, status_file_name="ols_pairs_trading.json",
                                                      api=consts.alpaca_api, recreate_strategy_file=False)
-#weights, delta, zscores = algo.get_portfolio_weights()
+weights, delta, zscores = algo.get_portfolio_weights()
 orders = algo.build_orders(5000)
 print(orders)
-algo.trade(orders,30)"""
+algo.trade(orders,30)
 
 
